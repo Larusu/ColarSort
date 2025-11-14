@@ -113,11 +113,11 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             """,
             """
                 CREATE TABLE IF NOT EXISTS ${OrdersTable.TABLE_NAME} (
-            ${OrdersTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
-            ${OrdersTable.CUSTOMER_NAME} TEXT NOT NULL,
-            ${OrdersTable.STATUS} TEXT NOT NULL,
-            ${OrdersTable.EXPECTED_DELIVERY} TEXT
-            );
+                ${OrdersTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
+                ${OrdersTable.CUSTOMER_NAME} TEXT NOT NULL,
+                ${OrdersTable.STATUS} TEXT NOT NULL,
+                ${OrdersTable.EXPECTED_DELIVERY} TEXT
+                );
             """,
             """
                 CREATE TABLE IF NOT EXISTS ${OrderItemsTable.TABLE_NAME} (
@@ -134,17 +134,17 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 );
             """,
             """
-            CREATE TABLE IF NOT EXISTS ${ProductionStatusTable.TABLE_NAME} (
-            ${ProductionStatusTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT, 
-            ${ProductionStatusTable.ORDER_ITEM_ID} INTEGER NOT NULL,
-            ${ProductionStatusTable.CUTTING_STATUS} INTEGER NOT NULL,
-            ${ProductionStatusTable.STITCHING_STATUS} INTEGER NOT NULL,
-            ${ProductionStatusTable.EMBROIDERY_STATUS} INTEGER NOT NULL,
-            ${ProductionStatusTable.FINISHING_STATUS} INTEGER NOT NULL,
-            FOREIGN KEY(${ProductionStatusTable.ORDER_ITEM_ID})
-                REFERENCES ${OrderItemsTable.TABLE_NAME}(${OrderItemsTable.ID})
-                ON DELETE CASCADE
-            );
+                CREATE TABLE IF NOT EXISTS ${ProductionStatusTable.TABLE_NAME} (
+                ${ProductionStatusTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT, 
+                ${ProductionStatusTable.ORDER_ITEM_ID} INTEGER NOT NULL,
+                ${ProductionStatusTable.CUTTING_STATUS} INTEGER NOT NULL,
+                ${ProductionStatusTable.STITCHING_STATUS} INTEGER NOT NULL,
+                ${ProductionStatusTable.EMBROIDERY_STATUS} INTEGER NOT NULL,
+                ${ProductionStatusTable.FINISHING_STATUS} INTEGER NOT NULL,
+                FOREIGN KEY(${ProductionStatusTable.ORDER_ITEM_ID})
+                    REFERENCES ${OrderItemsTable.TABLE_NAME}(${OrderItemsTable.ID})
+                    ON DELETE CASCADE
+                );
             """
         )
 
