@@ -1,19 +1,22 @@
-# Android Studio
-*.iml
-.idea/
-.DS_Store
-
 # Gradle
 .gradle/
 /**/.gradle/
 build/
 /**/build/
 
-# Local config
+# Local configuration
 local.properties
-/local.properties
 
-# NDK / C++
+# Android Studio
+.idea/
+*.iml
+
+# Mac / OS
+.DS_Store
+
+# NDK / CMake
 .cxx/
 externalNativeBuild/
+
+# Captures
 captures/
