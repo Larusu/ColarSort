@@ -8,7 +8,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     companion object
     {
-        const val DATABASE_NAME = "colarsort.db"
+        const val DATABASE_NAME = "CollarSort.db"
         const val DATABASE_VERSION = 1
     }
     object UserTable
@@ -72,62 +72,68 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     override fun onCreate(db: SQLiteDatabase?)
     {
-        val createTableQuery =
+        val createTableQuery = listOf(
             """
-            CREATE TABLE IF NOT EXISTS ${UserTable.TABLE_NAME} (
-            ${UserTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
-            ${UserTable.USERNAME} TEXT NOT NULL,
-            ${UserTable.ROLE} TEXT NOT NULL,
-            ${UserTable.PASSWORD} TEXT NOT NULL
-            );
-            
-            CREATE TABLE IF NOT EXISTS ${MaterialsTable.TABLE_NAME} (
-            ${MaterialsTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
-            ${MaterialsTable.NAME} TEXT NOT NULL,
-            ${MaterialsTable.QUANTITY} REAL NOT NULL, 
-            ${MaterialsTable.UNIT} TEXT NOT NULL,
-            ${MaterialsTable.LOW_STOCK_THRESHOLD} REAL NOT NULL
-            );
-            
-            CREATE TABLE IF NOT EXISTS ${ProductsTable.TABLE_NAME} (
-            ${ProductsTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
-            ${ProductsTable.NAME} TEXT NOT NULL,
-            ${ProductsTable.IMAGE} BLOB
-            );
-            
-            CREATE TABLE IF NOT EXISTS ${ProductMaterialTable.TABLE_NAME} (
-            ${ProductMaterialTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
-            ${ProductMaterialTable.PRODUCT_ID} INTEGER NOT NULL,
-            ${ProductMaterialTable.MATERIAL_ID} INTEGER NOT NULL,
-            ${ProductMaterialTable.QUANTITY_REQUIRED} REAL NOT NULL,
-            FOREIGN KEY(${ProductMaterialTable.PRODUCT_ID}) 
-                REFERENCES ${ProductsTable.TABLE_NAME}(${ProductsTable.ID}) 
-                ON DELETE CASCADE,
-            FOREIGN KEY(${ProductMaterialTable.MATERIAL_ID}) 
-                REFERENCES ${MaterialsTable.TABLE_NAME}(${MaterialsTable.ID}) 
-                ON DELETE CASCADE
-            );
-            
-            CREATE TABLE IF NOT EXISTS ${OrdersTable.TABLE_NAME} (
+                CREATE TABLE IF NOT EXISTS ${UserTable.TABLE_NAME} (
+                ${UserTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
+                ${UserTable.USERNAME} TEXT NOT NULL,
+                ${UserTable.ROLE} TEXT NOT NULL,
+                ${UserTable.PASSWORD} TEXT NOT NULL
+                );
+            """,
+            """
+                CREATE TABLE IF NOT EXISTS ${MaterialsTable.TABLE_NAME} (
+                ${MaterialsTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
+                ${MaterialsTable.NAME} TEXT NOT NULL,
+                ${MaterialsTable.QUANTITY} REAL NOT NULL, 
+                ${MaterialsTable.UNIT} TEXT NOT NULL,
+                ${MaterialsTable.LOW_STOCK_THRESHOLD} REAL NOT NULL
+                );
+            """,
+            """
+                CREATE TABLE IF NOT EXISTS ${ProductsTable.TABLE_NAME} (
+                ${ProductsTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
+                ${ProductsTable.NAME} TEXT NOT NULL,
+                ${ProductsTable.IMAGE} BLOB
+                );
+            """,
+            """
+                CREATE TABLE IF NOT EXISTS ${ProductMaterialTable.TABLE_NAME} (
+                ${ProductMaterialTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
+                ${ProductMaterialTable.PRODUCT_ID} INTEGER NOT NULL,
+                ${ProductMaterialTable.MATERIAL_ID} INTEGER NOT NULL,
+                ${ProductMaterialTable.QUANTITY_REQUIRED} REAL NOT NULL,
+                FOREIGN KEY(${ProductMaterialTable.PRODUCT_ID}) 
+                    REFERENCES ${ProductsTable.TABLE_NAME}(${ProductsTable.ID}) 
+                    ON DELETE CASCADE,
+                FOREIGN KEY(${ProductMaterialTable.MATERIAL_ID}) 
+                    REFERENCES ${MaterialsTable.TABLE_NAME}(${MaterialsTable.ID}) 
+                    ON DELETE CASCADE
+                );
+            """,
+            """
+                CREATE TABLE IF NOT EXISTS ${OrdersTable.TABLE_NAME} (
             ${OrdersTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
             ${OrdersTable.CUSTOMER_NAME} TEXT NOT NULL,
             ${OrdersTable.STATUS} TEXT NOT NULL,
             ${OrdersTable.EXPECTED_DELIVERY} TEXT
             );
-            
-            CREATE TABLE IF NOT EXISTS ${OrderItemsTable.TABLE_NAME} (
-            ${OrderItemsTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
-            ${OrderItemsTable.ORDER_ID} INTEGER NOT NULL,
-            ${OrderItemsTable.PRODUCT_ID} INTEGER NOT NULL,
-            ${OrderItemsTable.QUANTITY} INTEGER NOT NULL, 
-            FOREIGN KEY(${OrderItemsTable.ORDER_ID})
-                REFERENCES ${OrdersTable.TABLE_NAME}(${OrdersTable.ID})
-                ON DELETE CASCADE,
-            FOREIGN KEY(${OrderItemsTable.PRODUCT_ID})
-                REFERENCES ${ProductsTable.TABLE_NAME}(${ProductsTable.ID})
-                ON DELETE CASCADE
-            );
-            
+            """,
+            """
+                CREATE TABLE IF NOT EXISTS ${OrderItemsTable.TABLE_NAME} (
+                ${OrderItemsTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
+                ${OrderItemsTable.ORDER_ID} INTEGER NOT NULL,
+                ${OrderItemsTable.PRODUCT_ID} INTEGER NOT NULL,
+                ${OrderItemsTable.QUANTITY} INTEGER NOT NULL, 
+                FOREIGN KEY(${OrderItemsTable.ORDER_ID})
+                    REFERENCES ${OrdersTable.TABLE_NAME}(${OrdersTable.ID})
+                    ON DELETE CASCADE,
+                FOREIGN KEY(${OrderItemsTable.PRODUCT_ID})
+                    REFERENCES ${ProductsTable.TABLE_NAME}(${ProductsTable.ID})
+                    ON DELETE CASCADE
+                );
+            """,
+            """
             CREATE TABLE IF NOT EXISTS ${ProductionStatusTable.TABLE_NAME} (
             ${ProductionStatusTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT, 
             ${ProductionStatusTable.ORDER_ITEM_ID} INTEGER NOT NULL,
@@ -140,7 +146,11 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 ON DELETE CASCADE
             );
             """
-        db?.execSQL(createTableQuery)
+        )
+
+        createTableQuery.forEach { query ->
+            db?.execSQL(query)
+        }
     }
 
     override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int)
