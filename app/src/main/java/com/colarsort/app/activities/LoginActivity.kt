@@ -1,8 +1,6 @@
 package com.colarsort.app.activities
 
-import android.content.ContentValues
 import android.os.Bundle
-import android.provider.SyncStateContract.Helpers.insert
 import android.text.InputType
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -11,15 +9,12 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.colarsort.app.R
 import com.colarsort.app.database.DatabaseHelper
-import com.colarsort.app.database.UserTable
 import com.colarsort.app.databinding.ActivityLoginBinding
-import com.colarsort.app.models.Users
 import com.colarsort.app.repository.UsersRepo
 
 class LoginActivity : AppCompatActivity() {
-
-    private lateinit var dbHelper: DatabaseHelper
     private lateinit var binding: ActivityLoginBinding
+    private lateinit var dbHelper: DatabaseHelper
     var isPasswordVisible = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,16 +30,6 @@ class LoginActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-
-//        val user = listOf(
-//            Users(null, "admin", "Admin", "admin"),
-//            Users(null, "user", "User", "user")
-//        )
-//
-//        user.forEach {
-//                users -> insert(users)
-//        }
-
         binding.showPasswordIcon.setOnClickListener { togglePasswordVisibility() }
 
         binding.loginButton.setOnClickListener {
@@ -77,7 +62,7 @@ class LoginActivity : AppCompatActivity() {
             return
         }
 
-        val repo = UsersRepo(this)
+        val repo = UsersRepo(dbHelper)
         val userExists = repo.validateCredentials(username, password)
         if(userExists)
         {
@@ -87,18 +72,5 @@ class LoginActivity : AppCompatActivity() {
 
         Toast.makeText(this, "You're not welcome!!", Toast.LENGTH_SHORT).show()
     }
-
-//    fun insert(user : Users)
-//    {
-//        val db = dbHelper.writableDatabase
-//        val values = ContentValues().apply {
-//            put(UserTable.USERNAME, user.username)
-//            put(UserTable.ROLE, user.role)
-//            put(UserTable.PASSWORD, user.password)
-//        }
-//        db.insert(UserTable.TABLE_NAME, null, values)
-//        db.close()
-//    }
-
 }
 
