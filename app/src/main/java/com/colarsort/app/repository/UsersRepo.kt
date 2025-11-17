@@ -17,7 +17,7 @@ class UsersRepo(private val context: Context)
      * @param username - username of the user performing action
      * @param password - password of the user performing action
      */
-    public fun validateCredentials(username: String, password: String): Boolean
+    fun validateCredentials(username: String, password: String): Boolean
     {
         val db: SQLiteDatabase = dbHelper.writableDatabase
 
