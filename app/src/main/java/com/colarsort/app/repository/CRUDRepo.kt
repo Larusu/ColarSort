@@ -4,7 +4,7 @@ import android.content.ContentValues
 import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.models.RowConversion
 
-abstract class CRUDRepo<T>(private val dbHelper: DatabaseHelper)
+abstract class CRUDRepo(private val dbHelper: DatabaseHelper)
 {
     /**
      * Column names for this table. The order MUST match the order of values returned by
