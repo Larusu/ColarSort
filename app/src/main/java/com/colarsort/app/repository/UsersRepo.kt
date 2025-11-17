@@ -7,12 +7,10 @@ import android.widget.Toast
 import com.colarsort.app.database.UserTable
 import android.content.ContentValues
 
-class UsersRepo(private val context: Context)
+class UsersRepo(private val dbHelper: DatabaseHelper)
 {
-    private val dbHelper = DatabaseHelper(context)
-
     /**
-     * To verify the user account, based on the existing accounts
+     * Returns true if the user exists on the existing accounts
      *
      * @param username - username of the user performing action
      * @param password - password of the user performing action
@@ -33,31 +31,15 @@ class UsersRepo(private val context: Context)
     }
 
     /**
-     * Creates a new worker account, based on the existing admin user.
+     * Creates a new worker account by admin and
+     * returns true if creating is successful
      *
-     * @param adminName - username of the admin performing action
      * @param newEmployeeUsername - username of the new worker account
      * @param employeePassword - password of the new worker account
      */
-    fun assignWorker(adminName: String, newEmployeeUsername: String, employeePassword: String)
+    fun assignWorker(newEmployeeUsername: String, employeePassword: String): Boolean
     {
         val db: SQLiteDatabase = dbHelper.writableDatabase
-
-        val cursor = db.rawQuery(
-            "SELECT * FROM ${UserTable.TABLE_NAME} WHERE ${UserTable.ROLE} = 'Admin' AND ${UserTable.USERNAME} = ?",
-            arrayOf(adminName)
-        )
-
-        val isAdmin = cursor.count > 0
-
-        cursor.close()
-
-        if(!isAdmin)
-        {
-            Toast.makeText(context, "You are not an admin!!! (Under construction)", Toast.LENGTH_SHORT).show()
-            db.close()
-            return
-        }
 
         val values = ContentValues().apply {
             put(UserTable.USERNAME, newEmployeeUsername)
@@ -65,8 +47,10 @@ class UsersRepo(private val context: Context)
             put(UserTable.PASSWORD, employeePassword)
         }
 
-        db.insert(UserTable.TABLE_NAME, null, values)
+        val result = db.insert(UserTable.TABLE_NAME, null, values)
 
         db.close()
+
+        return result != -1L // returns true if insert of row ID is successful
     }
 }
