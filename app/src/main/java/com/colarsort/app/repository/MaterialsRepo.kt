@@ -2,9 +2,8 @@ package com.colarsort.app.repository
 
 import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.database.MaterialsTable
-import com.colarsort.app.models.Materials
 
-class MaterialsRepo(val dbHelper: DatabaseHelper) : CRUDRepo<Materials>(dbHelper)
+class MaterialsRepo(dbHelper: DatabaseHelper) : CRUDRepo(dbHelper)
 {
     override val tableName: String = MaterialsTable.TABLE_NAME
     override val tableRows: Array<String> = arrayOf(
@@ -13,5 +12,4 @@ class MaterialsRepo(val dbHelper: DatabaseHelper) : CRUDRepo<Materials>(dbHelper
         MaterialsTable.UNIT,
         MaterialsTable.LOW_STOCK_THRESHOLD
     )
-
 }
