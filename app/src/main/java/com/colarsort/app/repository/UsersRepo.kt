@@ -1,9 +1,7 @@
 package com.colarsort.app.repository
 
 import com.colarsort.app.database.DatabaseHelper
-import android.content.Context
 import android.database.sqlite.SQLiteDatabase
-import android.widget.Toast
 import com.colarsort.app.database.UserTable
 import android.content.ContentValues
 
