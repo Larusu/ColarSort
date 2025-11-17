@@ -21,7 +21,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 ${UserTable.ROLE} TEXT NOT NULL,
                 ${UserTable.PASSWORD} TEXT NOT NULL
                 );
-            """,
+            """.trimIndent(),
             """
                 CREATE TABLE IF NOT EXISTS ${MaterialsTable.TABLE_NAME} (
                 ${MaterialsTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,14 +30,14 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 ${MaterialsTable.UNIT} TEXT NOT NULL,
                 ${MaterialsTable.LOW_STOCK_THRESHOLD} REAL NOT NULL
                 );
-            """,
+            """.trimIndent(),
             """
                 CREATE TABLE IF NOT EXISTS ${ProductsTable.TABLE_NAME} (
                 ${ProductsTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
                 ${ProductsTable.NAME} TEXT NOT NULL,
                 ${ProductsTable.IMAGE} BLOB
                 );
-            """,
+            """.trimIndent(),
             """
                 CREATE TABLE IF NOT EXISTS ${ProductMaterialTable.TABLE_NAME} (
                 ${ProductMaterialTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,7 +51,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                     REFERENCES ${MaterialsTable.TABLE_NAME}(${MaterialsTable.ID}) 
                     ON DELETE CASCADE
                 );
-            """,
+            """.trimIndent(),
             """
                 CREATE TABLE IF NOT EXISTS ${OrdersTable.TABLE_NAME} (
                 ${OrdersTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -59,7 +59,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 ${OrdersTable.STATUS} TEXT NOT NULL,
                 ${OrdersTable.EXPECTED_DELIVERY} TEXT
                 );
-            """,
+            """.trimIndent(),
             """
                 CREATE TABLE IF NOT EXISTS ${OrderItemsTable.TABLE_NAME} (
                 ${OrderItemsTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -73,7 +73,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                     REFERENCES ${ProductsTable.TABLE_NAME}(${ProductsTable.ID})
                     ON DELETE CASCADE
                 );
-            """,
+            """.trimIndent(),
             """
                 CREATE TABLE IF NOT EXISTS ${ProductionStatusTable.TABLE_NAME} (
                 ${ProductionStatusTable.ID} INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -86,7 +86,19 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                     REFERENCES ${OrderItemsTable.TABLE_NAME}(${OrderItemsTable.ID})
                     ON DELETE CASCADE
                 );
+            """.trimIndent(),
             """
+                INSERT INTO ${UserTable.TABLE_NAME} (
+                     ${UserTable.USERNAME},
+                     ${UserTable.ROLE},
+                     ${UserTable.PASSWORD}
+                 )
+                 SELECT 'admin', 'Admin', 'admin'
+                 WHERE NOT EXISTS (
+                    SELECT 1 FROM ${UserTable.TABLE_NAME} 
+                    WHERE ${UserTable.USERNAME} = 'admin' 
+                 );
+            """.trimIndent()
         )
 
         createTableQuery.forEach { query ->
