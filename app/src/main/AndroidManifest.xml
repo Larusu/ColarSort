@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ColarSort">
         <activity
-            android:name=".activities.LoginActivity"
+            android:name=".activities.ProductsActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -21,8 +21,13 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".activities.LoginActivity"
+            android:exported="false">
+        </activity>
+        <activity
             android:name=".activities.MainActivity"
-            android:exported="false"/>
+            android:exported="false">
+        </activity>
     </application>
 
 </manifest>

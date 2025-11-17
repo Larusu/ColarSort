@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/add_product"
+        android:title="Add a product"/>
+    <item
+        android:id="@+id/update_product"
+        android:title="Update a product"/>
+    <item
+        android:id="@+id/remove_product"
+        android:title="Remove a product"/>
+</menu>

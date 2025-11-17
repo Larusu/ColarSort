@@ -2,6 +2,7 @@ package com.colarsort.app.activities
 
 import android.content.ContentValues
 import android.os.Bundle
+import android.provider.SyncStateContract.Helpers.insert
 import android.text.InputType
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -34,6 +35,15 @@ class LoginActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+//        val user = listOf(
+//            Users(null, "admin", "Admin", "admin"),
+//            Users(null, "user", "User", "user")
+//        )
+//
+//        user.forEach {
+//                users -> insert(users)
+//        }
 
         binding.showPasswordIcon.setOnClickListener { togglePasswordVisibility() }
 
@@ -77,5 +87,18 @@ class LoginActivity : AppCompatActivity() {
 
         Toast.makeText(this, "You're not welcome!!", Toast.LENGTH_SHORT).show()
     }
+
+//    fun insert(user : Users)
+//    {
+//        val db = dbHelper.writableDatabase
+//        val values = ContentValues().apply {
+//            put(UserTable.USERNAME, user.username)
+//            put(UserTable.ROLE, user.role)
+//            put(UserTable.PASSWORD, user.password)
+//        }
+//        db.insert(UserTable.TABLE_NAME, null, values)
+//        db.close()
+//    }
+
 }
 

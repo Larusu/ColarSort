@@ -81,7 +81,8 @@
                     android:fontFamily="@font/glacial_indifference"
                     android:hint="Enter username"
                     android:singleLine="true"
-                    android:textSize="22sp" />
+                    android:textSize="22sp"
+                    android:textColor="@color/black"/>
 
             </LinearLayout>
 
@@ -131,6 +132,7 @@
                         android:hint="Enter password"
                         android:singleLine="true"
                         android:textSize="22sp"
+                        android:textColor="@color/black"
                         android:inputType="textPassword" />
 
                 </LinearLayout>
