@@ -10,10 +10,11 @@ class ProductsRepo(dbHelper: DatabaseHelper) : CRUDRepo<Products>(dbHelper)
 {
     override val tableName: String = ProductsTable.TABLE_NAME
     override val tableRows: Array<String> = arrayOf(ProductsTable.NAME, ProductsTable.IMAGE)
+    override val idName: String = ProductsTable.ID
 
     override fun converter(cursor: Cursor): Products
     {
-        Products(
+        return Products(
             id = cursor.getInt(cursor.getColumnIndexOrThrow(ProductsTable.ID)),
             name = cursor.getString(cursor.getColumnIndexOrThrow(ProductsTable.NAME)),
             image = cursor.getBlob(cursor.getColumnIndexOrThrow(ProductsTable.IMAGE))

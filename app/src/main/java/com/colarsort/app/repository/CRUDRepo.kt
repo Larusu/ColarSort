@@ -13,6 +13,7 @@ abstract class CRUDRepo<T>(private val dbHelper: DatabaseHelper)
      */
     protected abstract val tableName: String
     protected abstract val tableRows: Array<String>
+    protected abstract val idName : String
     protected abstract fun converter(cursor: Cursor): T
 
     /**
@@ -60,5 +61,17 @@ abstract class CRUDRepo<T>(private val dbHelper: DatabaseHelper)
         }
 
         return dataList
+    }
+
+    fun deleteColumn(rowId: Int)
+    {
+        val db = dbHelper.writableDatabase
+
+        db.delete(
+            tableName,
+            "$idName = ?",
+            arrayOf(rowId.toString())
+        )
+        db.close()
     }
 }
