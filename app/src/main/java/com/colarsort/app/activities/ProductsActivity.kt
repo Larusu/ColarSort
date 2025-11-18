@@ -11,11 +11,15 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.colarsort.app.R
+import com.colarsort.app.adapters.ProductAdapter
+import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.databinding.ActivityProductsBinding
+import com.colarsort.app.models.Products
 
 class ProductsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityProductsBinding
+    private lateinit var recyclerView: RecyclerView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,6 +31,27 @@ class ProductsActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+        recyclerView = binding.recyclerViewProducts
+
+        val products = arrayListOf<Products>(
+//            Products(1, "Product 1", null),
+//            Products(2, "Product 2", null),
+//            Products(3, "Product 3", null),
+//            Products(4, "Product 4", null),
+//            Products(5, "Product 5", null),
+//            Products(6, "Product 6", null),
+//            Products(7, "Product 7", null),
+//            Products(8, "Product 8", null),
+//            Products(9, "Product 9", null),
+//            Products(10, "Product 10", null),
+//            Products(11, "Product 11", null),
+//            Products(12, "Product 12", null),
+        )
+
+        val adapter = ProductAdapter(products)
+        recyclerView.layoutManager = GridLayoutManager(this, 3)
+        recyclerView.adapter = adapter
 
         val hamburgerMenu = binding.productMenu
 
