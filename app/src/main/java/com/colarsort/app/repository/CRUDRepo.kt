@@ -1,10 +1,11 @@
 package com.colarsort.app.repository
 
 import android.content.ContentValues
+import android.database.Cursor
 import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.models.RowConversion
 
-abstract class CRUDRepo(private val dbHelper: DatabaseHelper)
+abstract class CRUDRepo<T>(private val dbHelper: DatabaseHelper)
 {
     /**
      * Column names for this table. The order MUST match the order of values returned by
@@ -12,6 +13,7 @@ abstract class CRUDRepo(private val dbHelper: DatabaseHelper)
      */
     protected abstract val tableName: String
     protected abstract val tableRows: Array<String>
+    protected abstract fun converter(cursor: Cursor): T
 
     /**
      * Inserts a model into the database by converting it into row representation.
@@ -44,5 +46,19 @@ abstract class CRUDRepo(private val dbHelper: DatabaseHelper)
 
         db.insert(tableName, null, cv)
         db.close()
+    }
+
+    fun getAll() : List<T>
+    {
+        val db = dbHelper.readableDatabase
+        val dataList = mutableListOf<T>()
+
+        val cursor = db.rawQuery("SELECT * FROM $tableName", null)
+
+        cursor.use {
+            while(it.moveToNext()) { dataList.add(converter(it)) }
+        }
+
+        return dataList
     }
 }
