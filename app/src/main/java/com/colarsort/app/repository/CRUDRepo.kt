@@ -103,7 +103,9 @@ abstract class CRUDRepo<T : RowConversion>(private val dbHelper: DatabaseHelper)
      * @return 'true' if at least one row was successfully updated, otherwise 'false'
      *
      * Usage:
-     * val Products(1, "newProduct"Name, null)
+     * val newProductValue = Products(1, "newProductName", null)
+     * val repoProduct = ProductsRepo(this)
+     * repoProduct.update(newProductValue)
      */
     fun update(model: T): Boolean
     {
