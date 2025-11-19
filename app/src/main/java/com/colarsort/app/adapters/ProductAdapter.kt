@@ -1,6 +1,7 @@
 package com.colarsort.app.adapters
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,7 +21,8 @@ class ProductAdapter(private val products: ArrayList<Products>) : RecyclerView.A
 
         fun bind(product: Products) {
             if (product.image != null) {
-                productImage.setImageBitmap(product.image as Bitmap)
+                val bitmap = BitmapFactory.decodeByteArray(product.image, 0, product.image.size)
+                productImage.setImageBitmap(bitmap)
             } else {
                 productImage.setImageResource(R.drawable.ic_launcher_background) // fallback image
             }
@@ -39,9 +41,7 @@ class ProductAdapter(private val products: ArrayList<Products>) : RecyclerView.A
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val product = products[position]
-        holder.productImage.setImageBitmap(product.image as Bitmap?)
-        holder.productName.text = product.name
+        holder.bind(products[position])
     }
 
     override fun getItemCount(): Int {

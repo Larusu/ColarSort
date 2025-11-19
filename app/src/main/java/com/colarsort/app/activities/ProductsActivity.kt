@@ -30,6 +30,9 @@ class ProductsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        dbHelper = DatabaseHelper(this)
+        productsRepo = ProductsRepo(dbHelper)
+
         binding = ActivityProductsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -39,9 +42,6 @@ class ProductsActivity : AppCompatActivity() {
             insets
         }
 
-        dbHelper = DatabaseHelper(this)
-        productsRepo = ProductsRepo(dbHelper)
-
         // Set up RecyclerView
         adapter = ProductAdapter(productList)
         binding.recyclerViewProducts.layoutManager = GridLayoutManager(this, 3)
@@ -50,13 +50,6 @@ class ProductsActivity : AppCompatActivity() {
         // Load data from the database
         productList.addAll(productsRepo.getAll())
         adapter.notifyDataSetChanged()
-
-        productList.add(Products(1, "Product 1", null))
-        productList.add(Products(2, "Product 2", null))
-        productList.add(Products(3, "Product 3", null))
-        productList.add(Products(4, "Product 4", null))
-        productList.add(Products(5, "Product 5", null))
-        productList.add(Products(6, "Product 6", null))
 
         // Set up on click listeners
         binding.productMenu.setOnClickListener { view ->
@@ -78,10 +71,8 @@ class ProductsActivity : AppCompatActivity() {
                 }
                 true
             }
-
             popup.show()
         }
-
     }
 
     private fun showPopupMenu(view: View) {
@@ -97,7 +88,6 @@ class ProductsActivity : AppCompatActivity() {
                 else -> false
             }
         }
-
         popup.show()
     }
 
