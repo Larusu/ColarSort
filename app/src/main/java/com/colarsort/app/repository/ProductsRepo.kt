@@ -1,6 +1,5 @@
 package com.colarsort.app.repository
 
-import android.content.Context
 import android.database.Cursor
 import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.database.ProductsTable
