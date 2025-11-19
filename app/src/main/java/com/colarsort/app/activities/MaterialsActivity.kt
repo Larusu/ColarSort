@@ -43,14 +43,14 @@ class MaterialsActivity : AppCompatActivity() {
         }
 
         // TEMPORARY MATERIAL CREATION
-        materialList.add(Materials(1, "Cotton", 100.0, "m", 10.0))
-        materialList.add(Materials(2, "Silk", 50.0, "m", 5.0))
-        materialList.add(Materials(3, "Wool", 75.0, "m", 8.0))
-        materialList.add(Materials(4, "Linen", 60.0, "m", 7.0))
-        materialList.add(Materials(5, "Denim", 90.0, "m", 12.0))
-        materialList.add(Materials(6, "Cashmere", 40.0, "m", 4.0))
-        materialList.add(Materials(7, "Satin", 30.0, "m", 3.0))
-        materialList.add(Materials(8, "Velvet", 20.0, "m", 2.0))
+        materialList.add(Materials(1, "Cotton", 100.0, "m", 10.0, null))
+        materialList.add(Materials(2, "Silk", 50.0, "m", 5.0, null))
+        materialList.add(Materials(3, "Wool", 75.0, "m", 8.0, null))
+        materialList.add(Materials(4, "Linen", 60.0, "m", 7.0, null))
+        materialList.add(Materials(5, "Denim", 90.0, "m", 12.0, null))
+        materialList.add(Materials(6, "Cashmere", 40.0, "m", 4.0, null))
+        materialList.add(Materials(7, "Satin", 30.0, "m", 3.0, null))
+        materialList.add(Materials(8, "Velvet", 20.0, "m", 2.0, null))
 
         // Set up RecyclerView
         adapter = MaterialAdapter(materialList)
