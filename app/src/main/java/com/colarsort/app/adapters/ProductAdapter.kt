@@ -23,7 +23,7 @@ class ProductAdapter(private val products: ArrayList<Products>) : RecyclerView.A
                 val bitmap = BitmapFactory.decodeByteArray(product.image, 0, product.image.size)
                 productImage.setImageBitmap(bitmap)
             } else {
-                productImage.setImageResource(R.drawable.ic_launcher_background) // fallback image
+                productImage.setImageResource(R.drawable.default_img) // fallback image
             }
 
             productName.text = product.name

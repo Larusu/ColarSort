@@ -10,30 +10,30 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.colarsort.app.R
-import com.colarsort.app.adapters.ProductAdapter
+import com.colarsort.app.adapters.MaterialAdapter
 import com.colarsort.app.database.DatabaseHelper
-import com.colarsort.app.databinding.ActivityProductsBinding
-import com.colarsort.app.models.Products
-import com.colarsort.app.repository.ProductsRepo
+import com.colarsort.app.databinding.ActivityMaterialsBinding
+import com.colarsort.app.models.Materials
+import com.colarsort.app.repository.MaterialsRepo
 
-class ProductsActivity : AppCompatActivity() {
+class MaterialsActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityProductsBinding
+    private lateinit var binding: ActivityMaterialsBinding
     private lateinit var dbHelper: DatabaseHelper
-    private lateinit var productsRepo: ProductsRepo
-    private lateinit var adapter: ProductAdapter
-    private val productList = ArrayList<Products>()
+    private lateinit var materialsRepo: MaterialsRepo
+    private lateinit var adapter: MaterialAdapter
+    private val materialList = ArrayList<Materials>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         dbHelper = DatabaseHelper(this)
-        productsRepo = ProductsRepo(dbHelper)
+        materialsRepo = MaterialsRepo(dbHelper)
 
-        binding = ActivityProductsBinding.inflate(layoutInflater)
+        binding = ActivityMaterialsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
@@ -42,24 +42,23 @@ class ProductsActivity : AppCompatActivity() {
             insets
         }
 
-        // TEMPORARY PRODUCT CREATION
-        productList.add(Products(1, "T-shirt", null))
-        productList.add(Products(2, "Jeans", null))
-        productList.add(Products(3, "Sweater", null))
-        productList.add(Products(4, "Dress", null))
-        productList.add(Products(5, "Shoes", null))
-        productList.add(Products(6, "Hat", null))
-        productList.add(Products(7, "Jacket", null))
-        productList.add(Products(8, "Gloves", null))
-        productList.add(Products(9, "Scarf", null))
+        // TEMPORARY MATERIAL CREATION
+        materialList.add(Materials(1, "Cotton", 100.0, "m", 10.0))
+        materialList.add(Materials(2, "Silk", 50.0, "m", 5.0))
+        materialList.add(Materials(3, "Wool", 75.0, "m", 8.0))
+        materialList.add(Materials(4, "Linen", 60.0, "m", 7.0))
+        materialList.add(Materials(5, "Denim", 90.0, "m", 12.0))
+        materialList.add(Materials(6, "Cashmere", 40.0, "m", 4.0))
+        materialList.add(Materials(7, "Satin", 30.0, "m", 3.0))
+        materialList.add(Materials(8, "Velvet", 20.0, "m", 2.0))
 
         // Set up RecyclerView
-        adapter = ProductAdapter(productList)
-        binding.recyclerViewProducts.layoutManager = GridLayoutManager(this, 3)
-        binding.recyclerViewProducts.adapter = adapter
+        adapter = MaterialAdapter(materialList)
+        binding.recyclerViewMaterials.layoutManager = LinearLayoutManager(this)
+        binding.recyclerViewMaterials.adapter = adapter
 
         // Load data from the database
-        productList.addAll(productsRepo.getAll())
+        materialList.addAll(materialsRepo.getAll())
         adapter.notifyDataSetChanged()
 
         // Set up on click listeners
@@ -76,39 +75,21 @@ class ProductsActivity : AppCompatActivity() {
         }
 
         binding.ivProducts.setOnClickListener {
-            Toast.makeText(this, "You are already in products", Toast.LENGTH_SHORT).show()
-        }
-
-        binding.ivMaterials.setOnClickListener {
-            val intent = Intent(this, MaterialsActivity::class.java)
+            val intent = Intent(this, ProductsActivity::class.java)
             startActivity(intent)
             finish()
         }
 
-        binding.productMenu.setOnClickListener { view ->
+        binding.ivMaterials.setOnClickListener {
+            Toast.makeText(this, "You are already in materials", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.materialsMenu.setOnClickListener { view ->
             showPopupMenu(view)
         }
 
         binding.btnAdd.setOnClickListener {
-
-        }
-
-        adapter.onItemMoreClickListener = { product: Products, view: View ->
-            val popup = PopupMenu(this, view)
-            popup.menuInflater.inflate(R.menu.more_menu, popup.menu)
-
-            popup.setOnMenuItemClickListener { menuItem ->
-                when (menuItem.itemId) {
-                    R.id.edit_product -> {
-                        // TODO: open edit dialog or activity
-                    }
-                    R.id.delete_product -> {
-                        // TODO: delete from DB and remove from productList
-                    }
-                }
-                true
-            }
-            popup.show()
+            TODO("Not yet implemented")
         }
     }
 

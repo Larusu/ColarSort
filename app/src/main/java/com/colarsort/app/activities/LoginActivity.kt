@@ -1,5 +1,7 @@
 package com.colarsort.app.activities
 
+import android.content.ContentValues
+import android.content.Intent
 import android.os.Bundle
 import android.text.InputType
 import android.widget.Toast
@@ -10,8 +12,10 @@ import androidx.core.view.WindowInsetsCompat
 import com.colarsort.app.R
 import com.colarsort.app.adapters.ProductAdapter
 import com.colarsort.app.database.DatabaseHelper
+import com.colarsort.app.database.UserTable
 import com.colarsort.app.databinding.ActivityLoginBinding
 import com.colarsort.app.models.Products
+import com.colarsort.app.models.Users
 import com.colarsort.app.repository.ProductsRepo
 import com.colarsort.app.repository.UsersRepo
 
@@ -25,10 +29,10 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        dbHelper = DatabaseHelper(this)
+
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        dbHelper = DatabaseHelper(this)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.contentContainer)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -36,11 +40,16 @@ class LoginActivity : AppCompatActivity() {
             insets
         }
 
+        // TEMPORARY USER CREATION
+        insert(Users(null, "admin", "admin", "admin"))
+
+        // Set up on click listeners
         binding.showPasswordIcon.setOnClickListener { togglePasswordVisibility() }
+
         binding.loginButton.setOnClickListener {
             handleLogin(
-                binding.usernameField.text.toString(),
-                binding.passwordField.text.toString()
+                binding.usernameField.text.toString().trim(),
+                binding.passwordField.text.toString().trim()
             )
         }
     }
@@ -62,18 +71,45 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun handleLogin(username: String, password: String) {
-        if (username.isEmpty() || password.isEmpty()) {
-            Toast.makeText(this, "Enter all fields!", Toast.LENGTH_SHORT).show()
-            return
+        when {
+            username.isEmpty() && password.isEmpty()-> {
+                Toast.makeText(this, "Please enter your username and password", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            username.isEmpty() -> {
+                Toast.makeText(this, "Please enter your username", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            password.isEmpty() -> {
+                Toast.makeText(this, "Please enter your password", Toast.LENGTH_SHORT).show()
+                return
+            }
         }
 
         val userRepo = UsersRepo(dbHelper)
         val userExists = userRepo.validateCredentials(username, password)
 
         if (userExists) {
-            Toast.makeText(this, "Welcome to login", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, ProductsActivity::class.java)
+            startActivity(intent)
+            Toast.makeText(this, "Logged in successfully", Toast.LENGTH_SHORT).show()
+            finish()
         } else {
-            Toast.makeText(this, "You're not welcome!!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "User not found", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    fun insert(user : Users)
+    {
+        val db = dbHelper.writableDatabase
+        val values = ContentValues().apply {
+            put(UserTable.USERNAME, user.username)
+            put(UserTable.ROLE, user.role)
+            put(UserTable.PASSWORD, user.password)
+        }
+        db.insert(UserTable.TABLE_NAME, null, values)
+        db.close()
     }
 }
