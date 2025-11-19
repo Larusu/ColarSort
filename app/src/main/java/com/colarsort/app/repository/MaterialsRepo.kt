@@ -13,7 +13,8 @@ class MaterialsRepo(dbHelper: DatabaseHelper) : CRUDRepo<Materials>(dbHelper)
         MaterialsTable.NAME,
         MaterialsTable.QUANTITY,
         MaterialsTable.UNIT,
-        MaterialsTable.LOW_STOCK_THRESHOLD
+        MaterialsTable.LOW_STOCK_THRESHOLD,
+        MaterialsTable.IMAGE
     )
     override val idName: String = ProductsTable.ID
 
@@ -24,7 +25,8 @@ class MaterialsRepo(dbHelper: DatabaseHelper) : CRUDRepo<Materials>(dbHelper)
             name = cursor.getString(cursor.getColumnIndexOrThrow(MaterialsTable.NAME)),
             quantity = cursor.getDouble(cursor.getColumnIndexOrThrow(MaterialsTable.QUANTITY)),
             unit = cursor.getString(cursor.getColumnIndexOrThrow(MaterialsTable.UNIT)),
-            stockThreshold = cursor.getDouble(cursor.getColumnIndexOrThrow(MaterialsTable.LOW_STOCK_THRESHOLD))
+            stockThreshold = cursor.getDouble(cursor.getColumnIndexOrThrow(MaterialsTable.LOW_STOCK_THRESHOLD)),
+            image = cursor.getBlob(cursor.getColumnIndexOrThrow(MaterialsTable.IMAGE))
         )
     }
 }

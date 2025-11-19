@@ -29,7 +29,8 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 ${MaterialsTable.NAME} TEXT NOT NULL,
                 ${MaterialsTable.QUANTITY} REAL NOT NULL, 
                 ${MaterialsTable.UNIT} TEXT NOT NULL,
-                ${MaterialsTable.LOW_STOCK_THRESHOLD} REAL NOT NULL
+                ${MaterialsTable.LOW_STOCK_THRESHOLD} REAL NOT NULL,
+                ${MaterialsTable.IMAGE} BLOB
                 );
             """.trimIndent(),
             """

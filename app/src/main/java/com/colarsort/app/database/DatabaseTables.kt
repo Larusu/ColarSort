@@ -16,6 +16,7 @@ object MaterialsTable
     const val QUANTITY = "quantity"
     const val UNIT = "unit"
     const val LOW_STOCK_THRESHOLD = "low_stock_threshold"
+    const val IMAGE = "image"
 }
 object ProductsTable
 {
