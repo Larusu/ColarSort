@@ -51,7 +51,7 @@ class ProductsActivity : AppCompatActivity() {
         productList.addAll(productsRepo.getAll())
         adapter.notifyDataSetChanged()
 
-//        productList.add(Products(1, "Product 1", productsRepo.inputStreamToByteArray(this, "sample.jpg")))
+        productList.add(Products(1, "Product 1", null))
         productList.add(Products(2, "Product 2", null))
         productList.add(Products(3, "Product 3", null))
         productList.add(Products(4, "Product 4", null))
