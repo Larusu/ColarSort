@@ -8,18 +8,23 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.colarsort.app.R
+import com.colarsort.app.adapters.ProductAdapter
 import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.databinding.ActivityLoginBinding
+import com.colarsort.app.models.Products
+import com.colarsort.app.repository.ProductsRepo
 import com.colarsort.app.repository.UsersRepo
 
 class LoginActivity : AppCompatActivity() {
+
     private lateinit var binding: ActivityLoginBinding
     private lateinit var dbHelper: DatabaseHelper
-    var isPasswordVisible = false
+    private var isPasswordVisible = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -30,47 +35,45 @@ class LoginActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-        binding.showPasswordIcon.setOnClickListener { togglePasswordVisibility() }
 
+        binding.showPasswordIcon.setOnClickListener { togglePasswordVisibility() }
         binding.loginButton.setOnClickListener {
-            handleLogin(binding.usernameField.text.toString(), binding.passwordField.text.toString())
+            handleLogin(
+                binding.usernameField.text.toString(),
+                binding.passwordField.text.toString()
+            )
         }
     }
-    fun togglePasswordVisibility() {
+
+    private fun togglePasswordVisibility() {
         isPasswordVisible = !isPasswordVisible
         val font = binding.passwordField.typeface
 
-        if (isPasswordVisible) {
-            binding.passwordField.inputType =
-                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+        binding.passwordField.inputType = if (isPasswordVisible) {
             binding.showPasswordIcon.setImageResource(R.drawable.show_password)
+            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
         } else {
-            binding.passwordField.inputType =
-                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
             binding.showPasswordIcon.setImageResource(R.drawable.hide_password)
+            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
         }
 
         binding.passwordField.typeface = font
         binding.passwordField.setSelection(binding.passwordField.length())
     }
 
-    fun handleLogin(username: String, password: String)
-    {
-        if(username.isEmpty() || password.isEmpty())
-        {
+    private fun handleLogin(username: String, password: String) {
+        if (username.isEmpty() || password.isEmpty()) {
             Toast.makeText(this, "Enter all fields!", Toast.LENGTH_SHORT).show()
             return
         }
 
-        val repo = UsersRepo(dbHelper)
-        val userExists = repo.validateCredentials(username, password)
-        if(userExists)
-        {
-            Toast.makeText(this, "Welcome to login", Toast.LENGTH_SHORT).show()
-            return
-        }
+        val userRepo = UsersRepo(dbHelper)
+        val userExists = userRepo.validateCredentials(username, password)
 
-        Toast.makeText(this, "You're not welcome!!", Toast.LENGTH_SHORT).show()
+        if (userExists) {
+            Toast.makeText(this, "Welcome to login", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "You're not welcome!!", Toast.LENGTH_SHORT).show()
+        }
     }
 }
-
