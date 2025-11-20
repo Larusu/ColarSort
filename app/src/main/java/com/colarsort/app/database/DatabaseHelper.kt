@@ -95,7 +95,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                      ${UserTable.ROLE},
                      ${UserTable.PASSWORD}
                  )
-                 SELECT 'admin', 'Admin', '${hashPassword("admin")}'
+                 SELECT 'admin', 'Manager', '${hashPassword("admin")}'
                  WHERE NOT EXISTS (
                     SELECT 1 FROM ${UserTable.TABLE_NAME} 
                     WHERE ${UserTable.USERNAME} = 'admin' 
