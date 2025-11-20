@@ -58,9 +58,12 @@ class ProductsActivity : AppCompatActivity() {
         binding.recyclerViewProducts.layoutManager = GridLayoutManager(this, 3)
         binding.recyclerViewProducts.adapter = adapter
 
-        // Load data from the database
-        productList.addAll(productsRepo.getAll())
-        adapter.notifyDataSetChanged()
+        // Load data from the database and update only the newly added items
+        val existingSize = productList.size
+        val newItems = productsRepo.getAll()
+        productList.addAll(newItems)
+
+        adapter.notifyItemRangeInserted(existingSize, newItems.size)
 
         // Set up on click listeners
         binding.ivHome.setOnClickListener {
@@ -103,7 +106,13 @@ class ProductsActivity : AppCompatActivity() {
                         // TODO: open edit dialog or activity
                     }
                     R.id.delete_product -> {
-                        // TODO: delete from DB and remove from productList
+                        productsRepo.deleteColumn(product.id!!)
+
+                        val index = productList.indexOf(product)
+                        if (index != -1) {
+                            productList.removeAt(index)
+                            adapter.notifyItemRemoved(index)
+                        }
                     }
                 }
                 true
