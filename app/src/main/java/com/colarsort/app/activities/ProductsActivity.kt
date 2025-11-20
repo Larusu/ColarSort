@@ -2,6 +2,7 @@ package com.colarsort.app.activities
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.PopupMenu
 import android.widget.Toast
@@ -17,6 +18,7 @@ import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.databinding.ActivityProductsBinding
 import com.colarsort.app.models.Products
 import com.colarsort.app.repository.ProductsRepo
+import com.colarsort.app.repository.UtilityHelper.inputStreamToByteArray
 
 class ProductsActivity : AppCompatActivity() {
 
@@ -43,15 +45,24 @@ class ProductsActivity : AppCompatActivity() {
         }
 
         // TEMPORARY PRODUCT CREATION
-        productList.add(Products(1, "T-shirt", null))
-        productList.add(Products(2, "Jeans", null))
-        productList.add(Products(3, "Sweater", null))
-        productList.add(Products(4, "Dress", null))
-        productList.add(Products(5, "Shoes", null))
-        productList.add(Products(6, "Hat", null))
-        productList.add(Products(7, "Jacket", null))
-        productList.add(Products(8, "Gloves", null))
-        productList.add(Products(9, "Scarf", null))
+        val existing = productsRepo.getAll()
+
+        if(existing.size < 4)
+        {
+            val product = arrayOf(
+                Products(null, "T-shirt", inputStreamToByteArray(this, "tshirt.png")),
+                Products(null, "Jeans", inputStreamToByteArray(this, "jeans.png")),
+                Products(null, "Sweater", inputStreamToByteArray(this, "sweater.png")),
+                Products(null, "Dress", inputStreamToByteArray(this, "dress.png")),
+                Products(null, "Shoes", inputStreamToByteArray(this, "shoes.png")),
+                Products(null, "Hat", inputStreamToByteArray(this, "hat.png")),
+                Products(null, "Jacket", inputStreamToByteArray(this, "jacket.png")),
+                Products(null, "Gloves", inputStreamToByteArray(this, "gloves.png")),
+                Products(null, "Scarf", inputStreamToByteArray(this, "scarf.jpg"))
+            )
+            product.forEach { p -> productsRepo.insert(p) }
+        }
+        // TEMPORARY PRODUCT CREATION
 
         // Set up RecyclerView
         adapter = ProductAdapter(productList)
@@ -106,7 +117,12 @@ class ProductsActivity : AppCompatActivity() {
                         // TODO: open edit dialog or activity
                     }
                     R.id.delete_product -> {
-                        productsRepo.deleteColumn(product.id!!)
+                        val successful = productsRepo.deleteColumn(product.id!!)
+
+                        if(!successful)
+                        {
+                            // if not deleted do something
+                        }
 
                         val index = productList.indexOf(product)
                         if (index != -1) {
