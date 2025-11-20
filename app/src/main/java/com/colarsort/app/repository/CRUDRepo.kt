@@ -39,6 +39,7 @@ abstract class CRUDRepo<T : RowConversion>(private val dbHelper: DatabaseHelper)
         }
 
         db.insert(tableName, null, cv)
+
         db.close()
     }
 
@@ -61,6 +62,9 @@ abstract class CRUDRepo<T : RowConversion>(private val dbHelper: DatabaseHelper)
         cursor.use {
             while(it.moveToNext()) { dataList.add(converter(it)) }
         }
+
+        db.close()
+        cursor.close()
 
         return dataList
     }
@@ -89,6 +93,7 @@ abstract class CRUDRepo<T : RowConversion>(private val dbHelper: DatabaseHelper)
         )
 
         db.close()
+
         return rowsDeleted > 0
     }
 
