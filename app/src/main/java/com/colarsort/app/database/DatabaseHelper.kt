@@ -3,6 +3,7 @@ package com.colarsort.app.database
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import com.colarsort.app.repository.UtilityHelper.hashPassword
 
 class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION)
 {
@@ -94,7 +95,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                      ${UserTable.ROLE},
                      ${UserTable.PASSWORD}
                  )
-                 SELECT 'admin', 'Admin', 'admin'
+                 SELECT 'admin', 'Admin', '${hashPassword("admin")}'
                  WHERE NOT EXISTS (
                     SELECT 1 FROM ${UserTable.TABLE_NAME} 
                     WHERE ${UserTable.USERNAME} = 'admin' 
