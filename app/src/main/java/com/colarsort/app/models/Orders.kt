@@ -1,6 +1,10 @@
 package com.colarsort.app.models
 
-data class Orders(val id: Integer,
-                  val productId: Integer,
-                  val materialId: Integer,
-                  val quantityRequired: Double)
+data class Orders(val id: Int?,
+                  val customerName: String?,
+                  val status: String?,
+                  val expectedDelivery: String?
+                  ) : RowConversion
+{
+    override fun toRow(): Array<Any?> = arrayOf(customerName, status, expectedDelivery)
+}
