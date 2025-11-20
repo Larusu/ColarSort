@@ -92,6 +92,7 @@ abstract class CRUDRepo<T : RowConversion>(private val dbHelper: DatabaseHelper)
             arrayOf(rowId.toString())
         )
 
+        rowsAffected.close()
         db.close()
 
         return rowsDeleted > 0
