@@ -4,6 +4,8 @@ import com.colarsort.app.database.DatabaseHelper
 import android.database.sqlite.SQLiteDatabase
 import com.colarsort.app.database.UserTable
 import android.content.ContentValues
+import com.colarsort.app.models.Users
+import java.security.MessageDigest
 
 class UsersRepo(private val dbHelper: DatabaseHelper)
 {
@@ -15,13 +17,19 @@ class UsersRepo(private val dbHelper: DatabaseHelper)
      */
     fun validateCredentials(username: String, password: String): Boolean
     {
-        val db: SQLiteDatabase = dbHelper.writableDatabase
+        val db = dbHelper.writableDatabase
 
-        val cursor = db.rawQuery(
-            "SELECT * FROM ${UserTable.TABLE_NAME} WHERE ${UserTable.USERNAME} = ? AND ${UserTable.PASSWORD} = ?",
-            arrayOf(username, password)
+        val cursor = db.query(
+            UserTable.TABLE_NAME,
+            null,
+            "${UserTable.USERNAME} = ? AND ${UserTable.PASSWORD} = ?",
+            arrayOf(username, hashPassword(password)),
+            null,
+            null,
+            null
         )
         val exists = cursor.count > 0
+
         cursor.close()
         db.close()
 
@@ -37,12 +45,12 @@ class UsersRepo(private val dbHelper: DatabaseHelper)
      */
     fun assignWorker(newEmployeeUsername: String, employeePassword: String): Boolean
     {
-        val db: SQLiteDatabase = dbHelper.writableDatabase
+        val db = dbHelper.writableDatabase
 
         val values = ContentValues().apply {
             put(UserTable.USERNAME, newEmployeeUsername)
             put(UserTable.ROLE, "Worker")
-            put(UserTable.PASSWORD, employeePassword)
+            put(UserTable.PASSWORD, hashPassword(employeePassword))
         }
 
         val result = db.insert(UserTable.TABLE_NAME, null, values)
@@ -50,5 +58,67 @@ class UsersRepo(private val dbHelper: DatabaseHelper)
         db.close()
 
         return result != -1L // returns true if insert of row ID is successful
+    }
+
+    /**
+     * Retrieves all users from the database, ordered first by role priority and
+     * then by username
+     *
+     * Role ordering is defined as:
+     * - Manager -> Highest priority
+     * - Worker  -> Lowest priority
+     *
+     * @return A list of users that is sorted by role priority and username
+     */
+    fun getAll() : List<Users>
+    {
+        val db = dbHelper.readableDatabase
+        val dataList = mutableListOf<Users>()
+
+        val cursor = db.rawQuery(
+            "SELECT ${UserTable.USERNAME}, ${UserTable.ROLE} " +
+                    "FROM ${UserTable.TABLE_NAME} " +
+                    "ORDER BY " +
+                    "   CASE " +
+                    "       WHEN ${UserTable.ROLE} = 'Manager' THEN 0 " +
+                    "       WHEN ${UserTable.ROLE} = 'Worker' THEN 1" +
+                    "       ELSE 2" +
+                    "   END," +
+                    "${UserTable.USERNAME} ASC",
+            arrayOf()
+        )
+
+        cursor.use {
+            while (it.moveToNext())
+            {
+                val name = it.getString(it.getColumnIndexOrThrow(UserTable.USERNAME))
+                val role = it.getString(it.getColumnIndexOrThrow(UserTable.ROLE))
+                val user = Users(null, name, role, null)
+                dataList.add(user)
+            }
+        }
+
+        cursor.close()
+        db.close()
+
+        return dataList
+    }
+
+    /**
+     * Generates a SHA-256 hash of a password.
+     *
+     * The password is converted to bytes processed using the SHA-256
+     * MessageDigest algorithm, and the resulting byte array is encoded
+     * as a lowercase string.
+     *
+     * @param password The plain-text password to hash
+     * @return A SHA-256 hash represented as a hex string
+     */
+    private fun hashPassword(password: String) : String
+    {
+        val bytes = MessageDigest.getInstance("SHA-256")
+            .digest(password.toByteArray())
+
+        return bytes.joinToString("") { "%02x".format(it) }
     }
 }
