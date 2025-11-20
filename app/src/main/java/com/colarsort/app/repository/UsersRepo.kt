@@ -4,7 +4,7 @@ import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.database.UserTable
 import android.content.ContentValues
 import com.colarsort.app.models.Users
-import java.security.MessageDigest
+import com.colarsort.app.repository.UtilityHelper.hashPassword
 
 class UsersRepo(private val dbHelper: DatabaseHelper)
 {
@@ -101,23 +101,5 @@ class UsersRepo(private val dbHelper: DatabaseHelper)
         db.close()
 
         return dataList
-    }
-
-    /**
-     * Generates a SHA-256 hash of a password.
-     *
-     * The password is converted to bytes processed using the SHA-256
-     * MessageDigest algorithm, and the resulting byte array is encoded
-     * as a lowercase string.
-     *
-     * @param password The plain-text password to hash
-     * @return A SHA-256 hash represented as a hex string
-     */
-    private fun hashPassword(password: String) : String
-    {
-        val bytes = MessageDigest.getInstance("SHA-256")
-            .digest(password.toByteArray())
-
-        return bytes.joinToString("") { "%02x".format(it) }
     }
 }
