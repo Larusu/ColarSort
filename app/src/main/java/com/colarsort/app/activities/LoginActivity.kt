@@ -39,10 +39,6 @@ class LoginActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-
-        // TEMPORARY USER CREATION
-        insert(Users(null, "admin", "admin", "admin"))
-
         // Set up on click listeners
         binding.showPasswordIcon.setOnClickListener { togglePasswordVisibility() }
 
@@ -99,17 +95,5 @@ class LoginActivity : AppCompatActivity() {
         } else {
             Toast.makeText(this, "User not found", Toast.LENGTH_SHORT).show()
         }
-    }
-
-    fun insert(user : Users)
-    {
-        val db = dbHelper.writableDatabase
-        val values = ContentValues().apply {
-            put(UserTable.USERNAME, user.username)
-            put(UserTable.ROLE, user.role)
-            put(UserTable.PASSWORD, user.password)
-        }
-        db.insert(UserTable.TABLE_NAME, null, values)
-        db.close()
     }
 }
