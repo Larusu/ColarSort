@@ -1,7 +1,6 @@
 package com.colarsort.app.activities
 
 import android.content.Intent
-import android.graphics.Bitmap
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.View
@@ -23,10 +22,9 @@ import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.databinding.ActivityMaterialsBinding
 import com.colarsort.app.models.Materials
 import com.colarsort.app.repository.MaterialsRepo
-import com.colarsort.app.repository.UtilityHelper.inputStreamToByteArray
-import java.io.ByteArrayOutputStream
-import androidx.core.graphics.scale
 import android.widget.AutoCompleteTextView
+import com.colarsort.app.utils.UtilityHelper.inputStreamToByteArray
+import com.colarsort.app.utils.UtilityHelper.compressBitmap
 
 
 class MaterialsActivity : AppCompatActivity() {
@@ -269,17 +267,4 @@ class MaterialsActivity : AppCompatActivity() {
 
         dialog.show()
     }
-
-    private fun compressBitmap(bitmap: Bitmap): ByteArray {
-        val outputStream = ByteArrayOutputStream()
-
-        val scaled = bitmap.scale(500, 500)
-
-        scaled.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
-
-        return outputStream.toByteArray()
-    }
-
-
-
 }

@@ -1,6 +1,9 @@
-package com.colarsort.app.repository
+package com.colarsort.app.utils
 
 import android.content.Context
+import android.graphics.Bitmap
+import androidx.core.graphics.scale
+import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
 
 object UtilityHelper {
@@ -39,5 +42,24 @@ object UtilityHelper {
             .digest(password.toByteArray())
 
         return bytes.joinToString("") { "%02x".format(it) }
+    }
+
+    /**
+     * Compresses a bitmap into a JPEG byte array after scaling it to 500x500 pixels.
+     *
+     * The bitmap is first resized, then compressed at 70% quality, and the result is
+     * returned as a byte array suitable for storage or database insertion
+     *
+     * @param bitmap The original bitmap to compress
+     * @return a JPEG-Compressed byte array of the scaled bitmap
+     */
+    fun compressBitmap(bitmap: Bitmap): ByteArray {
+        val outputStream = ByteArrayOutputStream()
+
+        val scaled = bitmap.scale(500, 500)
+
+        scaled.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
+
+        return outputStream.toByteArray()
     }
 }

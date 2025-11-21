@@ -4,7 +4,7 @@ import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.database.UserTable
 import android.content.ContentValues
 import com.colarsort.app.models.Users
-import com.colarsort.app.repository.UtilityHelper.hashPassword
+import com.colarsort.app.utils.UtilityHelper.hashPassword
 
 class UsersRepo(private val dbHelper: DatabaseHelper)
 {

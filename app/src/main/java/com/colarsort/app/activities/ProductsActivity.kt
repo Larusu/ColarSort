@@ -17,7 +17,7 @@ import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.databinding.ActivityProductsBinding
 import com.colarsort.app.models.Products
 import com.colarsort.app.repository.ProductsRepo
-import com.colarsort.app.repository.UtilityHelper.inputStreamToByteArray
+import com.colarsort.app.utils.UtilityHelper.inputStreamToByteArray
 
 class ProductsActivity : AppCompatActivity() {
 
