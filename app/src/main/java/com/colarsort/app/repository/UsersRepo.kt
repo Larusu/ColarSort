@@ -11,8 +11,8 @@ class UsersRepo(private val dbHelper: DatabaseHelper)
     /**
      * Returns true if the user exists on the existing accounts
      *
-     * @param username - username of the user performing action
-     * @param password - password of the user performing action
+     * @param username username of the user performing action
+     * @param password password of the user performing action
      */
     fun validateCredentials(username: String, password: String): Boolean
     {
@@ -39,8 +39,8 @@ class UsersRepo(private val dbHelper: DatabaseHelper)
      * Creates a new worker account by admin and
      * returns true if creating is successful
      *
-     * @param newEmployeeUsername - username of the new worker account
-     * @param employeePassword - password of the new worker account
+     * @param newEmployeeUsername username of the new worker account
+     * @param employeePassword password of the new worker account
      */
     fun assignWorker(newEmployeeUsername: String, employeePassword: String): Boolean
     {

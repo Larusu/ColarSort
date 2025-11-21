@@ -11,11 +11,13 @@ object UtilityHelper {
      * Reads an image file from the 'assets' directory and returns as ByteArray
      * It is useful to store image in the Products data class that expects ByteArray
      *
-     * @param context - the context use to access the assets folder
-     * @param image - the filename of the image in assets directory
+     * @param context The context used to access the assets folder.
+     * @param image The filename of the image in the assets directory.
      *
-     * Example:
-     * val bytes = inputStreamToByteArray(this, "Sample.png")
+     * ### Usage example:
+     *  ```
+     *  val bytes: ByteArray = inputStreamToByteArray(this, "Sample.png")
+     *  ```
      */
     fun inputStreamToByteArray(context: Context, image: String) : ByteArray
     {
