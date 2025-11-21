@@ -1,8 +1,12 @@
 package com.colarsort.app.activities
 
 import android.content.Intent
+import android.graphics.BitmapFactory
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.PopupMenu
@@ -25,6 +29,7 @@ import com.colarsort.app.repository.MaterialsRepo
 import android.widget.AutoCompleteTextView
 import com.colarsort.app.utils.UtilityHelper.inputStreamToByteArray
 import com.colarsort.app.utils.UtilityHelper.compressBitmap
+import androidx.core.graphics.drawable.toDrawable
 
 
 class MaterialsActivity : AppCompatActivity() {
@@ -119,7 +124,7 @@ class MaterialsActivity : AppCompatActivity() {
             popup.setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
                     R.id.edit_product -> {
-                        // TODO: edit and update material
+                        showMaterialDialog(material)
                     }
 
                     R.id.delete_product -> {
@@ -198,6 +203,7 @@ class MaterialsActivity : AppCompatActivity() {
         dialog.show()
     }
 
+    // Add ng material
     private fun showAddMaterialDialog() {
 
         selectedImageBytes = null
@@ -217,13 +223,14 @@ class MaterialsActivity : AppCompatActivity() {
             .setCancelable(true)
             .create()
 
+        dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
+
         val units = arrayOf("m", "pcs", "roll", "ft", "in", "yard")
         val unitAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, units)
         etUnit.setAdapter(unitAdapter)
 
         etUnit.setOnClickListener { etUnit.showDropDown() }
 
-        // Click ImageView → choose image
         dialogImageView.setOnClickListener {
             tempDialogImageView = dialogImageView
 
@@ -267,4 +274,114 @@ class MaterialsActivity : AppCompatActivity() {
 
         dialog.show()
     }
+
+    // Edit ng material
+    private fun showMaterialDialog(material: Materials? = null) {
+        selectedImageBytes = material?.image
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_add_material, null)
+
+        val tvAddMaterial = dialogView.findViewById<TextView>(R.id.tv_add_material)
+        val etName = dialogView.findViewById<EditText>(R.id.et_material_name)
+        val etUnit = dialogView.findViewById<AutoCompleteTextView>(R.id.et_material_unit)
+        val etQuantity = dialogView.findViewById<EditText>(R.id.et_material_quantity)
+        val etLowStockThreshold = dialogView.findViewById<EditText>(R.id.et_low_stock_threshold)
+        val btnSave = dialogView.findViewById<TextView>(R.id.tv_save)
+        val btnCancel = dialogView.findViewById<TextView>(R.id.tv_cancel)
+        val dialogImageView = dialogView.findViewById<ImageView>(R.id.iv_material_image)
+
+        tvAddMaterial.text = if (material == null) "Add Material" else "Edit Material"
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+        dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
+
+        val units = arrayOf("m", "pcs", "roll", "ft", "in", "yard")
+        val unitAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, units)
+        etUnit.setAdapter(unitAdapter)
+        etUnit.setOnClickListener { etUnit.showDropDown() }
+
+        // Pre-fill fields if editing
+        material?.let {
+            etName.setText(it.name)
+            etUnit.setText(it.unit)
+            etQuantity.setText(it.quantity.toString())
+            etLowStockThreshold.setText(it.stockThreshold.toString())
+            it.image?.let { bytes ->
+                val bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                dialogImageView.setImageBitmap(bmp)
+            }
+        }
+
+        // Image picker
+        dialogImageView.setOnClickListener {
+            tempDialogImageView = dialogImageView
+            val intent = Intent(Intent.ACTION_PICK)
+            intent.type = "image/*"
+            startActivityForResult(intent, 1001)
+        }
+
+        btnSave.setOnClickListener {
+            val name = etName.text.toString().trim()
+            val unit = etUnit.text.toString().trim()
+            val quantity = etQuantity.text.toString().toDoubleOrNull() ?: 0.0
+            val lowStockThreshold = etLowStockThreshold.text.toString().toDoubleOrNull() ?: 0.0
+
+            if (name.isEmpty() || unit.isEmpty()) {
+                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            if (material == null) {
+                // Add new material
+                val newMaterial = Materials(
+                    id = null,
+                    name = name,
+                    quantity = quantity,
+                    unit = unit,
+                    stockThreshold = lowStockThreshold,
+                    image = selectedImageBytes
+                )
+                materialsRepo.insert(newMaterial)
+            } else {
+                // Update existing material
+                val updatedMaterial = material.copy(
+                    id = material.id,
+                    name = name,
+                    unit = unit,
+                    quantity = quantity,
+                    stockThreshold = lowStockThreshold,
+                    image = selectedImageBytes ?: material.image
+                )
+
+                val success = materialsRepo.update(updatedMaterial)
+                if (success) {
+                    Toast.makeText(this, "Material updated successfully", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                } else {
+                    Toast.makeText(this, "Update failed", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+            }
+
+            // Refresh RecyclerView
+            materialList.clear()
+            materialList.addAll(materialsRepo.getAll())
+            adapter.notifyDataSetChanged()
+
+            tempDialogImageView = null
+            dialog.dismiss()
+        }
+
+        btnCancel.setOnClickListener {
+            tempDialogImageView = null
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+
 }
