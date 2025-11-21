@@ -13,6 +13,16 @@
         android:padding="16dp"
         android:background="@color/dark">
 
+        <!-- Material Image on the left -->
+        <ImageView
+            android:id="@+id/iv_material_image"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:scaleType="centerCrop"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
         <!-- Gear icon -->
         <ImageView
             android:id="@+id/iv_more"
@@ -24,16 +34,17 @@
             android:layout_marginEnd="4dp"
             android:layout_marginTop="4dp" />
 
-        <!-- Text area -->
+        <!-- Text area next to the image -->
         <LinearLayout
             android:id="@+id/details_layout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintStart_toEndOf="@id/iv_material_image"
             app:layout_constraintEnd_toStartOf="@id/iv_more"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginStart="10dp"
             android:layout_marginEnd="10dp">
 
             <!-- ID row -->

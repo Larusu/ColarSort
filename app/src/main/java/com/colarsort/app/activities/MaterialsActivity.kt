@@ -1,10 +1,16 @@
 package com.colarsort.app.activities
 
 import android.content.Intent
+import android.graphics.Bitmap
 import android.os.Bundle
+import android.provider.MediaStore
 import android.view.View
+import android.widget.ArrayAdapter
 import android.widget.PopupMenu
 import android.widget.Toast
+import android.widget.EditText
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -17,6 +23,11 @@ import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.databinding.ActivityMaterialsBinding
 import com.colarsort.app.models.Materials
 import com.colarsort.app.repository.MaterialsRepo
+import com.colarsort.app.repository.UtilityHelper.inputStreamToByteArray
+import java.io.ByteArrayOutputStream
+import androidx.core.graphics.scale
+import android.widget.AutoCompleteTextView
+
 
 class MaterialsActivity : AppCompatActivity() {
 
@@ -25,6 +36,10 @@ class MaterialsActivity : AppCompatActivity() {
     private lateinit var materialsRepo: MaterialsRepo
     private lateinit var adapter: MaterialAdapter
     private val materialList = ArrayList<Materials>()
+
+    private var tempDialogImageView: ImageView? = null
+    private var selectedImageBytes: ByteArray? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,23 +58,34 @@ class MaterialsActivity : AppCompatActivity() {
         }
 
         // TEMPORARY MATERIAL CREATION
-        materialList.add(Materials(1, "Cotton", 100.0, "m", 10.0, null))
-        materialList.add(Materials(2, "Silk", 50.0, "m", 5.0, null))
-        materialList.add(Materials(3, "Wool", 75.0, "m", 8.0, null))
-        materialList.add(Materials(4, "Linen", 60.0, "m", 7.0, null))
-        materialList.add(Materials(5, "Denim", 90.0, "m", 12.0, null))
-        materialList.add(Materials(6, "Cashmere", 40.0, "m", 4.0, null))
-        materialList.add(Materials(7, "Satin", 30.0, "m", 3.0, null))
-        materialList.add(Materials(8, "Velvet", 20.0, "m", 2.0, null))
+        val existing = materialsRepo.getAll()
+
+        if(existing.size < 4)
+        {
+            val material = arrayOf(
+                Materials(null, "Cotton", 100.0, "m", 10.0, inputStreamToByteArray(this, "materials/cotton_fabric.jpg")),
+                Materials(null, "Canvas", 200.0, "m", 15.0, inputStreamToByteArray(this, "materials/canvas_fabric.jpg")),
+                Materials(null, "Polyester", 150.0, "m", 12.0, inputStreamToByteArray(this, "materials/polyester_fabric.jpg")),
+                Materials(null, "Thread Roll", 20.0, "roll", 5.0, inputStreamToByteArray(this, "materials/thread_roll.jpg")),
+                Materials(null, "Button", 300.0, "pcs", 20.0, inputStreamToByteArray(this, "materials/button.jpg")),
+                Materials(null, "Zipper", 100.0, "pcs", 20.0, inputStreamToByteArray(this, "materials/zipper.jpg")),
+                Materials(null, "Elastic Band", 80.0, "m", 5.0, inputStreamToByteArray(this, "materials/elastic_band.jpg")),
+                Materials(null, "Velcro Strip", 120.0, "m", 10.0, inputStreamToByteArray(this, "materials/velcro_strip.jpg"))
+            )
+            material.forEach { m -> materialsRepo.insert(m) }
+        }
 
         // Set up RecyclerView
         adapter = MaterialAdapter(materialList)
         binding.recyclerViewMaterials.layoutManager = LinearLayoutManager(this)
         binding.recyclerViewMaterials.adapter = adapter
 
-        // Load data from the database
-        materialList.addAll(materialsRepo.getAll())
-        adapter.notifyDataSetChanged()
+        // Load data from the database and update only the newly added items
+        val existingSize = materialList.size
+        val newItems = materialsRepo.getAll()
+        materialList.addAll(newItems)
+
+        adapter.notifyItemRangeInserted(existingSize, newItems.size)
 
         // Set up on click listeners
         binding.ivHome.setOnClickListener {
@@ -84,15 +110,58 @@ class MaterialsActivity : AppCompatActivity() {
             Toast.makeText(this, "You are already in materials", Toast.LENGTH_SHORT).show()
         }
 
-        binding.materialsMenu.setOnClickListener { view ->
-            showPopupMenu(view)
+        binding.btnAddMaterial.setOnClickListener {
+            showAddMaterialDialog()
         }
 
-        binding.btnAdd.setOnClickListener {
-            TODO("Not yet implemented")
+        adapter.onItemMoreClickListener = { material: Materials, view: View ->
+            val popup = PopupMenu(this, view)
+            popup.menuInflater.inflate(R.menu.more_menu, popup.menu)
+
+            popup.setOnMenuItemClickListener { menuItem ->
+                when (menuItem.itemId) {
+                    R.id.edit_product -> {
+                        // TODO: edit and update material
+                    }
+
+                    R.id.delete_product -> {
+                        val successful = materialsRepo.deleteColumn(material.id!!)
+
+                        if (!successful) {
+                            Toast.makeText(this, "Error deleting material", Toast.LENGTH_SHORT)
+                                .show()
+                        }
+
+                        val index = materialList.indexOf(material)
+                        if (index != -1) {
+                            materialList.removeAt(index)
+                            adapter.notifyItemRemoved(index)
+                        }
+                    }
+                }
+                true
+            }
+            popup.show()
         }
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == 1001 && resultCode == RESULT_OK) {
+
+            val uri = data?.data ?: return
+            val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
+
+            // show image inside dialog
+            tempDialogImageView?.setImageBitmap(bitmap)
+
+            // convert bitmap → small compressed bytes
+            selectedImageBytes = compressBitmap(bitmap)
+        }
+    }
+
+    // Functions
     private fun showPopupMenu(view: View) {
         val popup = PopupMenu(this, view)
         popup.menuInflater.inflate(R.menu.hamburger_menu, popup.menu)
@@ -130,5 +199,87 @@ class MaterialsActivity : AppCompatActivity() {
         val dialog = builder.create()
         dialog.show()
     }
+
+    private fun showAddMaterialDialog() {
+
+        selectedImageBytes = null
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_add_material, null)
+
+        val etName = dialogView.findViewById<EditText>(R.id.et_material_name)
+        val etUnit = dialogView.findViewById<AutoCompleteTextView>(R.id.et_material_unit)
+        val etQuantity = dialogView.findViewById<EditText>(R.id.et_material_quantity)
+        val etLowStockThreshold = dialogView.findViewById<EditText>(R.id.et_low_stock_threshold)
+        val btnAdd = dialogView.findViewById<TextView>(R.id.tv_save)
+        val btnCancel = dialogView.findViewById<TextView>(R.id.tv_cancel)
+        val dialogImageView = dialogView.findViewById<ImageView>(R.id.iv_material_image)
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+
+        val units = arrayOf("m", "pcs", "roll", "ft", "in", "yard")
+        val unitAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, units)
+        etUnit.setAdapter(unitAdapter)
+
+        etUnit.setOnClickListener { etUnit.showDropDown() }
+
+        // Click ImageView → choose image
+        dialogImageView.setOnClickListener {
+            tempDialogImageView = dialogImageView
+
+            val intent = Intent(Intent.ACTION_PICK)
+            intent.type = "image/*"
+            startActivityForResult(intent, 1001)
+        }
+
+        btnAdd.setOnClickListener {
+
+            val name = etName.text.toString().trim()
+            val unit = etUnit.text.toString().trim()
+            val quantity = etQuantity.text.toString().toDoubleOrNull() ?: 0.0
+            val lowStockThreshold = etLowStockThreshold.text.toString().toDoubleOrNull() ?: 0.0
+
+            if (name.isEmpty() || unit.isEmpty()) {
+                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val material = Materials(
+                id = null,
+                name = name,
+                quantity = quantity,
+                unit = unit,
+                stockThreshold = lowStockThreshold,
+                image = selectedImageBytes
+            )
+
+            materialsRepo.insert(material)
+
+            materialList.clear()
+            materialList.addAll(materialsRepo.getAll())
+            adapter.notifyDataSetChanged()
+
+            tempDialogImageView = null
+            dialog.dismiss()
+        }
+
+        btnCancel.setOnClickListener { dialog.dismiss() }
+
+        dialog.show()
+    }
+
+    private fun compressBitmap(bitmap: Bitmap): ByteArray {
+        val outputStream = ByteArrayOutputStream()
+
+        val scaled = bitmap.scale(500, 500)
+
+        scaled.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
+
+        return outputStream.toByteArray()
+    }
+
+
 
 }

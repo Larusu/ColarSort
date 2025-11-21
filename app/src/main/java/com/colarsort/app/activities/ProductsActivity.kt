@@ -2,7 +2,6 @@ package com.colarsort.app.activities
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.PopupMenu
 import android.widget.Toast
@@ -50,19 +49,18 @@ class ProductsActivity : AppCompatActivity() {
         if(existing.size < 4)
         {
             val product = arrayOf(
-                Products(null, "T-shirt", inputStreamToByteArray(this, "tshirt.png")),
-                Products(null, "Jeans", inputStreamToByteArray(this, "jeans.png")),
-                Products(null, "Sweater", inputStreamToByteArray(this, "sweater.png")),
-                Products(null, "Dress", inputStreamToByteArray(this, "dress.png")),
-                Products(null, "Shoes", inputStreamToByteArray(this, "shoes.png")),
-                Products(null, "Hat", inputStreamToByteArray(this, "hat.png")),
-                Products(null, "Jacket", inputStreamToByteArray(this, "jacket.png")),
-                Products(null, "Gloves", inputStreamToByteArray(this, "gloves.png")),
-                Products(null, "Scarf", inputStreamToByteArray(this, "scarf.jpg"))
+                Products(null, "T-shirt", inputStreamToByteArray(this, "products/tshirt.png")),
+                Products(null, "Jeans", inputStreamToByteArray(this, "products/jeans.png")),
+                Products(null, "Sweater", inputStreamToByteArray(this, "products/sweater.png")),
+                Products(null, "Dress", inputStreamToByteArray(this, "products/dress.png")),
+                Products(null, "Shoes", inputStreamToByteArray(this, "products/shoes.png")),
+                Products(null, "Hat", inputStreamToByteArray(this, "products/hat.png")),
+                Products(null, "Jacket", inputStreamToByteArray(this, "products/jacket.png")),
+                Products(null, "Gloves", inputStreamToByteArray(this, "products/gloves.png")),
+                Products(null, "Scarf", inputStreamToByteArray(this, "products/scarf.jpg"))
             )
             product.forEach { p -> productsRepo.insert(p) }
         }
-        // TEMPORARY PRODUCT CREATION
 
         // Set up RecyclerView
         adapter = ProductAdapter(productList)
@@ -114,14 +112,14 @@ class ProductsActivity : AppCompatActivity() {
             popup.setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
                     R.id.edit_product -> {
-                        // TODO: open edit dialog or activity
+                        // TODO: edit and update product
                     }
                     R.id.delete_product -> {
                         val successful = productsRepo.deleteColumn(product.id!!)
 
                         if(!successful)
                         {
-                            // if not deleted do something
+                            Toast.makeText(this, "Error deleting product", Toast.LENGTH_SHORT).show()
                         }
 
                         val index = productList.indexOf(product)
