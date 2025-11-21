@@ -44,20 +44,36 @@ abstract class CRUDRepo<T : RowConversion>(private val dbHelper: DatabaseHelper)
     }
 
     /**
-     * Retrieves all records from the table and convert it into its corresponding
-     * data models instance.
-     *
-     * This function executes a `SELECT *` query, iterates through the result Cursor,
-     * and uses the repository's row converter to map each row into a model
-     *
-     * @return A list of all records stored in the table, converted to model objects.
+     * Retrieves all rows from the table and converts them into model instances.
+     *  *
+     *  * This method runs a `SELECT *` query on the table and delegates
+     *  * the row-to-model mapping to [fetchList].
+     *  *
+     *  * @return A list of all records in the table as model objects.
      */
-    fun getAll() : List<T>
+    open fun getAll() : List<T>
+    {
+        return fetchList("SELECT * FROM $tableName")
+    }
+
+    /**
+     * Executes the given SQL query and converts each resulting row into
+     * a model instance.
+     *
+     * This method serves as a reusable helper for SELECT operations.
+     * It runs the provided query, iterates through the Cursor results,
+     * and uses the repository's row converter to map each row into a
+     * corresponding data model.
+     *
+     * @param query The raw SQL SELECT query to execute.
+     * @return A list of model objects produced from the query results.
+     */
+    protected fun fetchList(query: String) : List<T>
     {
         val db = dbHelper.readableDatabase
         val dataList = mutableListOf<T>()
 
-        val cursor = db.rawQuery("SELECT * FROM $tableName", null)
+        val cursor = db.rawQuery(query, null)
 
         cursor.use {
             while(it.moveToNext()) { dataList.add(converter(it)) }
