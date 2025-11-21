@@ -124,7 +124,7 @@ class MaterialsActivity : AppCompatActivity() {
             popup.setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
                     R.id.edit_product -> {
-                        showMaterialDialog(material)
+                        showEditMaterialDialog(material)
                     }
 
                     R.id.delete_product -> {
@@ -276,7 +276,7 @@ class MaterialsActivity : AppCompatActivity() {
     }
 
     // Edit ng material
-    private fun showMaterialDialog(material: Materials? = null) {
+    private fun showEditMaterialDialog(material: Materials? = null) {
         selectedImageBytes = material?.image
 
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_material, null)
