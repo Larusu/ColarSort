@@ -9,5 +9,5 @@ data class ProductionStatus(val id: Int?,
 ) : RowConversion
 {
     override fun toRow(): Array<Any?> =
-        arrayOf(orderItemId, cuttingStatus, stitchingStatus, embroideryStatus, finishingStatus)
+        arrayOf(id, orderItemId, cuttingStatus, stitchingStatus, embroideryStatus, finishingStatus)
 }

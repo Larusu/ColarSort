@@ -2,7 +2,6 @@ package com.colarsort.app.repository
 
 import android.content.ContentValues
 import android.database.Cursor
-import android.util.Log
 import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.models.RowConversion
 
@@ -14,7 +13,6 @@ abstract class CRUDRepo<T : RowConversion>(private val dbHelper: DatabaseHelper)
      */
     protected abstract val tableName: String
     protected abstract val tableRows: Array<String>
-    protected abstract val idName : String
     protected abstract fun converter(cursor: Cursor): T
 
     /**
@@ -95,6 +93,7 @@ abstract class CRUDRepo<T : RowConversion>(private val dbHelper: DatabaseHelper)
     fun deleteColumn(rowId: Int) : Boolean
     {
         val db = dbHelper.writableDatabase
+        val idName = tableRows[0]
 
         val rowsAffected = db.rawQuery(
             "SELECT 1 FROM $tableName WHERE $idName = ? LIMIT 1",
@@ -136,11 +135,10 @@ abstract class CRUDRepo<T : RowConversion>(private val dbHelper: DatabaseHelper)
         val values = model.toRow()
         val idValue = values[0]
 
-        Log.d("IDDDDDDDD", "ID: $idValue")
-
         if(idValue == null) return false
 
         val db = dbHelper.writableDatabase
+        val idName = tableRows[0]
 
         val cv = ContentValues()
 

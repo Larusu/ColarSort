@@ -3,7 +3,6 @@ package com.colarsort.app.repository
 import android.database.Cursor
 import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.database.MaterialsTable
-import com.colarsort.app.database.ProductsTable
 import com.colarsort.app.models.Materials
 
 class MaterialsRepo(dbHelper: DatabaseHelper) : CRUDRepo<Materials>(dbHelper)
@@ -17,7 +16,6 @@ class MaterialsRepo(dbHelper: DatabaseHelper) : CRUDRepo<Materials>(dbHelper)
         MaterialsTable.LOW_STOCK_THRESHOLD,
         MaterialsTable.IMAGE
     )
-    override val idName: String = MaterialsTable.ID
 
     override fun converter(cursor: Cursor): Materials
     {

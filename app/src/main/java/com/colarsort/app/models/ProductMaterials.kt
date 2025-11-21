@@ -7,5 +7,5 @@ data class ProductMaterials(val id: Int?,
 ) : RowConversion
 {
     override fun toRow(): Array<Any?> =
-        arrayOf(productId, materialId, quantityRequired)
+        arrayOf(id, productId, materialId, quantityRequired)
 }

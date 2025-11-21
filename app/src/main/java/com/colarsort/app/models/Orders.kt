@@ -6,5 +6,6 @@ data class Orders(val id: Int?,
                   val expectedDelivery: String?
                   ) : RowConversion
 {
-    override fun toRow(): Array<Any?> = arrayOf(customerName, status, expectedDelivery)
+    override fun toRow(): Array<Any?> =
+        arrayOf(id, customerName, status, expectedDelivery)
 }

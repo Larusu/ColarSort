@@ -12,5 +12,6 @@ data class Products(val id: Int?,
                     val image: ByteArray?
                     ): RowConversion
 {
-    override fun toRow(): Array<Any?> = arrayOf(name, image)
+    override fun toRow(): Array<Any?> =
+        arrayOf(id, name, image)
 }

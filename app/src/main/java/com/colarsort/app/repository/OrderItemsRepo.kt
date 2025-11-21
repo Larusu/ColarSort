@@ -9,11 +9,11 @@ class OrderItemsRepo(dbHelper: DatabaseHelper) : CRUDRepo<OrderItems>(dbHelper)
 {
     override val tableName: String = OrderItemsTable.TABLE_NAME
     override val tableRows: Array<String> = arrayOf(
+        OrderItemsTable.ID,
         OrderItemsTable.ORDER_ID,
         OrderItemsTable.PRODUCT_ID,
         OrderItemsTable.QUANTITY
     )
-    override val idName: String = OrderItemsTable.ID
 
     override fun converter(cursor: Cursor): OrderItems {
         return OrderItems(

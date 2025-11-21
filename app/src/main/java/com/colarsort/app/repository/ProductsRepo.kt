@@ -8,8 +8,11 @@ import com.colarsort.app.models.Products
 class ProductsRepo(dbHelper: DatabaseHelper) : CRUDRepo<Products>(dbHelper)
 {
     override val tableName: String = ProductsTable.TABLE_NAME
-    override val tableRows: Array<String> = arrayOf(ProductsTable.NAME, ProductsTable.IMAGE)
-    override val idName: String = ProductsTable.ID
+    override val tableRows: Array<String> = arrayOf(
+        ProductsTable.ID,
+        ProductsTable.NAME,
+        ProductsTable.IMAGE
+    )
 
     override fun converter(cursor: Cursor): Products
     {

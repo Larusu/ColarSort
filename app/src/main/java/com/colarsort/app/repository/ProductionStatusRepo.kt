@@ -9,14 +9,13 @@ class ProductionStatusRepo(dbHelper: DatabaseHelper) : CRUDRepo<ProductionStatus
 {
     override val tableName: String = ProductionStatusTable.TABLE_NAME
     override val tableRows: Array<String> = arrayOf(
+        ProductionStatusTable.ID,
         ProductionStatusTable.ORDER_ITEM_ID,
         ProductionStatusTable.CUTTING_STATUS,
         ProductionStatusTable.STITCHING_STATUS,
         ProductionStatusTable.EMBROIDERY_STATUS,
         ProductionStatusTable.FINISHING_STATUS
     )
-
-    override val idName: String = ProductionStatusTable.ID
 
     override fun converter(cursor: Cursor): ProductionStatus {
         return ProductionStatus(
