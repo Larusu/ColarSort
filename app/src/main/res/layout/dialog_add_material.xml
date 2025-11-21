@@ -71,6 +71,7 @@
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:textColor="@color/white"
+                android:textColorHint="@color/lightGrey"
                 android:fontFamily="@font/glacial_indifference"
                 android:singleLine="true"/>
 
@@ -94,6 +95,7 @@
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:textColor="@color/white"
+                android:textColorHint="@color/lightGrey"
                 android:fontFamily="@font/glacial_indifference"
                 android:singleLine="true"
                 android:inputType="none" />
@@ -144,6 +146,7 @@
             android:padding="5dp"
             android:singleLine="true"
             android:textColor="@color/white"
+            android:textColorHint="@color/lightGrey"
             android:textSize="18sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
@@ -162,6 +165,7 @@
             android:padding="5dp"
             android:singleLine="true"
             android:textColor="@color/white"
+            android:textColorHint="@color/lightGrey"
             android:textSize="18sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
