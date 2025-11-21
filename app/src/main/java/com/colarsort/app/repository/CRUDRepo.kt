@@ -45,11 +45,11 @@ abstract class CRUDRepo<T : RowConversion>(private val dbHelper: DatabaseHelper)
 
     /**
      * Retrieves all rows from the table and converts them into model instances.
-     *  *
-     *  * This method runs a `SELECT *` query on the table and delegates
-     *  * the row-to-model mapping to [fetchList].
-     *  *
-     *  * @return A list of all records in the table as model objects.
+     *
+     *  This method runs a `SELECT *` query on the table and delegates
+     *  the row-to-model mapping to [fetchList].
+     *
+     *  @return A list of all records in the table as model objects.
      */
     open fun getAll() : List<T>
     {
@@ -118,16 +118,17 @@ abstract class CRUDRepo<T : RowConversion>(private val dbHelper: DatabaseHelper)
      * Updates an existing record in the database. The first value is treated as the
      * primary key (id) and is used to identify which row should be updated.
      *
-     * Only non-null values are written in the database
+     * Only non-null values are written to the database
      *
      * @param model the instance containing the updated data
+     * @return `true` if at least one row was successfully updated, otherwise `false`
      *
-     * @return 'true' if at least one row was successfully updated, otherwise 'false'
-     *
-     * Usage:
+     * ### Usage example:
+     * ```
      * val newProductValue = Products(1, "newProductName", null)
      * val repoProduct = ProductsRepo(this)
      * repoProduct.update(newProductValue)
+     * ```
      */
     fun update(model: T): Boolean
     {
