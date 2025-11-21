@@ -3,7 +3,6 @@ package com.colarsort.app.activities
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.View
@@ -23,6 +22,8 @@ import com.colarsort.app.models.Materials
 import com.colarsort.app.repository.MaterialsRepo
 import com.colarsort.app.utils.UtilityHelper.compressBitmap
 import com.colarsort.app.utils.UtilityHelper.inputStreamToByteArray
+import com.colarsort.app.utils.RecyclerUtils
+
 
 class MaterialsActivity : AppCompatActivity() {
 
@@ -74,11 +75,7 @@ class MaterialsActivity : AppCompatActivity() {
         binding.recyclerViewMaterials.layoutManager = LinearLayoutManager(this)
         binding.recyclerViewMaterials.adapter = adapter
 
-        // Load data from database
-        val existingSize = materialList.size
-        val newItems = materialsRepo.getAll()
-        materialList.addAll(newItems)
-        adapter.notifyItemRangeInserted(existingSize, newItems.size)
+        RecyclerUtils.initialize(materialList,materialsRepo.getAll(), adapter)
 
         // Navigation click listeners
         binding.ivHome.setOnClickListener { /* TODO: open home activity */ }
@@ -105,11 +102,8 @@ class MaterialsActivity : AppCompatActivity() {
                         val successful = materialsRepo.deleteColumn(material.id!!)
                         if (!successful) Toast.makeText(this, "Error deleting material", Toast.LENGTH_SHORT).show()
 
-                        val index = materialList.indexOf(material)
-                        if (index != -1) {
-                            materialList.removeAt(index)
-                            adapter.notifyItemRemoved(index)
-                        }
+                        val position = materialList.indexOf(material)
+                        RecyclerUtils.deleteAt(materialList, position, adapter)
                     }
                 }
                 true
@@ -203,9 +197,7 @@ class MaterialsActivity : AppCompatActivity() {
             val material = Materials(null, name, quantity, unit, lowStockThreshold, selectedImageBytes)
             materialsRepo.insert(material)
 
-            materialList.clear()
-            materialList.addAll(materialsRepo.getAll())
-            adapter.notifyDataSetChanged()
+            RecyclerUtils.insertedItems(materialList, materialsRepo.getAll(), adapter)
 
             tempDialogImageView = null
             dialog.dismiss()
@@ -216,7 +208,7 @@ class MaterialsActivity : AppCompatActivity() {
     }
 
     // Show edit material dialog
-    private fun showEditMaterialDialog(material: Materials? = null) {
+    private fun showEditMaterialDialog(material: Materials?) {
         selectedImageBytes = material?.image
 
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_material, null)
@@ -259,32 +251,25 @@ class MaterialsActivity : AppCompatActivity() {
         }
 
         btnSave.setOnClickListener {
-            val name = etName.text.toString().trim()
-            val unit = etUnit.text.toString().trim()
-            val quantity = etQuantity.text.toString().toDoubleOrNull() ?: 0.0
-            val lowStockThreshold = etLowStockThreshold.text.toString().toDoubleOrNull() ?: 0.0
+            val name: String? = etName.text.toString().trim().ifEmpty { null }
+            val quantity: Double? = etQuantity.text.toString().toDoubleOrNull()?.takeIf { it != 0.0 }
+            val unit: String? = etUnit.text.toString().trim().ifEmpty { null }
+            val threshold: Double? = etLowStockThreshold.text.toString().toDoubleOrNull()?.takeIf { it != 0.0 }
 
-            if (name.isEmpty() || unit.isEmpty()) {
-                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            if (material == null) {
-                val newMaterial = Materials(null, name, quantity, unit, lowStockThreshold, selectedImageBytes)
-                materialsRepo.insert(newMaterial)
-            } else {
-                val updatedMaterial = material.copy(id = material.id, name = name, unit = unit, quantity = quantity, stockThreshold = lowStockThreshold, image = selectedImageBytes ?: material.image)
-                val success = materialsRepo.update(updatedMaterial)
-                Toast.makeText(this, if (success) "Material updated successfully" else "Update failed", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            materialList.clear()
-            materialList.addAll(materialsRepo.getAll())
-            adapter.notifyDataSetChanged()
+            val materialData = Materials(material!!.id, name,  quantity, unit, threshold, selectedImageBytes?: material.image)
+            val success =  materialsRepo.update(materialData)
 
             tempDialogImageView = null
             dialog.dismiss()
+
+            if (success) {
+                RecyclerUtils.updateItem(materialList, materialData, adapter) {it.id}
+                Toast.makeText(this, "Material updated successfully", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            } else {
+                Toast.makeText(this, "Update failed", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
         }
 
         btnCancel.setOnClickListener {

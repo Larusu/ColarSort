@@ -9,5 +9,5 @@ data class Materials(val id: Int?,
                     ) : RowConversion
 {
     override fun toRow(): Array<Any?> =
-        arrayOf(name, quantity, unit, stockThreshold, image)
+        arrayOf(id, name, quantity, unit, stockThreshold, image)
 }

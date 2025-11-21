@@ -29,8 +29,8 @@ class UsersRepo(private val dbHelper: DatabaseHelper)
         )
         val exists = cursor.count > 0
 
-        cursor.close()
-        db.close()
+//        cursor.close()
+//        db.close()
 
         return exists
     }

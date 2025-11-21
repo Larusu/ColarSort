@@ -10,13 +10,14 @@ class MaterialsRepo(dbHelper: DatabaseHelper) : CRUDRepo<Materials>(dbHelper)
 {
     override val tableName: String = MaterialsTable.TABLE_NAME
     override val tableRows: Array<String> = arrayOf(
+        MaterialsTable.ID,
         MaterialsTable.NAME,
         MaterialsTable.QUANTITY,
         MaterialsTable.UNIT,
         MaterialsTable.LOW_STOCK_THRESHOLD,
         MaterialsTable.IMAGE
     )
-    override val idName: String = ProductsTable.ID
+    override val idName: String = MaterialsTable.ID
 
     override fun converter(cursor: Cursor): Materials
     {
