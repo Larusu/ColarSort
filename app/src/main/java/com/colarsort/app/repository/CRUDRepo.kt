@@ -2,6 +2,7 @@ package com.colarsort.app.repository
 
 import android.content.ContentValues
 import android.database.Cursor
+import android.util.Log
 import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.models.RowConversion
 
@@ -134,6 +135,8 @@ abstract class CRUDRepo<T : RowConversion>(private val dbHelper: DatabaseHelper)
     {
         val values = model.toRow()
         val idValue = values[0]
+
+        Log.d("IDDDDDDDD", "ID: $idValue")
 
         if(idValue == null) return false
 
