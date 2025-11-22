@@ -88,7 +88,11 @@ class ProductsActivity : AppCompatActivity() {
         // Navigation click listeners
         binding.ivHome.setOnClickListener { /* TODO: open home activity */ }
         binding.ivStatus.setOnClickListener { /* TODO: open status activity */ }
-        binding.ivOrders.setOnClickListener { /* TODO: open orders activity */ }
+        binding.ivOrders.setOnClickListener {
+            val intent = Intent(this, OrdersActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
         binding.ivProducts.setOnClickListener {
             Toast.makeText(this, "You are already in products", Toast.LENGTH_SHORT).show()
         }
@@ -230,7 +234,7 @@ class ProductsActivity : AppCompatActivity() {
         container.addView(row)
     }
 
-    //  Show Add/Edit Product dialog
+    //  Show Edit Product dialog
     private fun showEditProductDialog(product: Products? = null) {
         selectedImageBytes = product?.image
 

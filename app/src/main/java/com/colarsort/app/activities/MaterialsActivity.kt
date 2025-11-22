@@ -80,7 +80,11 @@ class MaterialsActivity : AppCompatActivity() {
         // Navigation click listeners
         binding.ivHome.setOnClickListener { /* TODO: open home activity */ }
         binding.ivStatus.setOnClickListener { /* TODO: open status activity */ }
-        binding.ivOrders.setOnClickListener { /* TODO: open orders activity */ }
+        binding.ivOrders.setOnClickListener {
+            val intent = Intent(this, OrdersActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
         binding.ivProducts.setOnClickListener {
             startActivity(Intent(this, ProductsActivity::class.java))
             finish()
@@ -88,6 +92,8 @@ class MaterialsActivity : AppCompatActivity() {
         binding.ivMaterials.setOnClickListener {
             Toast.makeText(this, "You are already in materials", Toast.LENGTH_SHORT).show()
         }
+
+        binding.materialsMenu.setOnClickListener { view -> showPopupMenu(view) }
 
         binding.btnAddMaterial.setOnClickListener { showAddMaterialDialog() }
 
@@ -256,19 +262,38 @@ class MaterialsActivity : AppCompatActivity() {
             val unit: String? = etUnit.text.toString().trim().ifEmpty { null }
             val threshold: Double? = etLowStockThreshold.text.toString().toDoubleOrNull()?.takeIf { it != 0.0 }
 
-            val materialData = Materials(material!!.id, name,  quantity, unit, threshold, selectedImageBytes?: material.image)
-            val success =  materialsRepo.update(materialData)
+            when {
+                name == null -> {
+                    Toast.makeText(this, "Invalid name. Please fill in the field.", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                quantity == null -> {
+                    Toast.makeText(this, "Invalid quantity. Please fill in the field.", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                unit == null -> {
+                    Toast.makeText(this, "Invalid unit. Please fill in the field.", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                threshold == null -> {
+                    Toast.makeText(this, "Invalid threshold. Please fill in the field.", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                } else -> {
+                    val materialData = Materials(material!!.id, name,  quantity, unit, threshold, selectedImageBytes?: material.image)
+                    val success =  materialsRepo.update(materialData)
 
-            tempDialogImageView = null
-            dialog.dismiss()
+                    tempDialogImageView = null
+                    dialog.dismiss()
 
-            if (success) {
-                RecyclerUtils.updateItem(materialList, materialData, adapter) {it.id}
-                Toast.makeText(this, "Material updated successfully", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            } else {
-                Toast.makeText(this, "Update failed", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
+                    if (success) {
+                        RecyclerUtils.updateItem(materialList, materialData, adapter) {it.id}
+                        Toast.makeText(this, "Material updated successfully", Toast.LENGTH_SHORT).show()
+                        return@setOnClickListener
+                    } else {
+                        Toast.makeText(this, "Update failed", Toast.LENGTH_SHORT).show()
+                        return@setOnClickListener
+                    }
+                }
             }
         }
 
