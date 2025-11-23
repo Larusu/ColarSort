@@ -27,6 +27,8 @@ import com.colarsort.app.models.Products
 import com.colarsort.app.repository.OrdersRepo
 import com.colarsort.app.repository.ProductsRepo
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
+import androidx.core.view.isEmpty
+
 class OrdersActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityOrdersBinding
@@ -76,6 +78,42 @@ class OrdersActivity : AppCompatActivity() {
 
         binding.tvAddProductRow.setOnClickListener {
             showAddProductDialog()
+        }
+
+        binding.tvClearOrderList.setOnClickListener {
+            if (findViewById<LinearLayout>(R.id.layout_materials_container).isEmpty()) {
+                showCustomToast(this, "Order List is empty")
+                return@setOnClickListener
+            }
+            val alertDialog = AlertDialog.Builder(this)
+                .setTitle("Clear Order List")
+                .setMessage("Are you sure you want to clear the order list?")
+                .setPositiveButton("Yes") { _, _ ->
+                    val container = findViewById<LinearLayout>(R.id.layout_materials_container)
+                    container.removeAllViews()
+                    showCustomToast(this, "Order List Cleared")
+                }
+                .setNegativeButton("No") { dialog, _ -> dialog.dismiss() }
+            alertDialog.show()
+        }
+
+        binding.tvConfirmOrder.setOnClickListener {
+            if (findViewById<LinearLayout>(R.id.layout_materials_container).isEmpty()) {
+                showCustomToast(this, "Order List is empty")
+                return@setOnClickListener
+            }
+
+            val alertDialog = AlertDialog.Builder(this)
+                .setTitle("Confirm Order")
+                .setMessage("Are you sure you want to confirm the order?")
+                .setPositiveButton("Yes") { _, _ ->
+                    val container = findViewById<LinearLayout>(R.id.layout_materials_container)
+                    // TODO: Add order to database
+                    container.removeAllViews()
+                    showCustomToast(this, "Order Confirmed")
+                }
+                .setNegativeButton("No") { dialog, _ -> dialog.dismiss() }
+            alertDialog.show()
         }
 
     }
@@ -138,6 +176,16 @@ class OrdersActivity : AppCompatActivity() {
             popup.setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
                     R.id.add_product -> {
+                        // Check if product is already on the list
+                        for (i in 0 until container.childCount) {
+                            val row = container.getChildAt(i)
+                            val tvProductName = row.findViewById<TextView>(R.id.order_product_name)
+                            if (tvProductName.text == product.name) {
+                                showCustomToast(this, "Product is already on the List")
+                                return@setOnMenuItemClickListener true
+                            }
+                        }
+
                         // Inflate a row layout for the selected product
                         val row = layoutInflater.inflate(R.layout.order_row, container, false)
                         val tvProductName = row.findViewById<TextView>(R.id.order_product_name)
