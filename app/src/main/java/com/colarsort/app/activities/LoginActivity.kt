@@ -18,6 +18,7 @@ import com.colarsort.app.models.Products
 import com.colarsort.app.models.Users
 import com.colarsort.app.repository.ProductsRepo
 import com.colarsort.app.repository.UsersRepo
+import com.colarsort.app.utils.UtilityHelper.showCustomToast
 
 class LoginActivity : AppCompatActivity() {
 
@@ -69,17 +70,17 @@ class LoginActivity : AppCompatActivity() {
     private fun handleLogin(username: String, password: String) {
         when {
             username.isEmpty() && password.isEmpty()-> {
-                Toast.makeText(this, "Please enter your username and password", Toast.LENGTH_SHORT).show()
+                showCustomToast(this, "Please enter your username and password")
                 return
             }
 
             username.isEmpty() -> {
-                Toast.makeText(this, "Please enter your username", Toast.LENGTH_SHORT).show()
+                showCustomToast(this, "Please enter your username")
                 return
             }
 
             password.isEmpty() -> {
-                Toast.makeText(this, "Please enter your password", Toast.LENGTH_SHORT).show()
+                showCustomToast(this, "Please enter your password")
                 return
             }
         }
@@ -88,12 +89,12 @@ class LoginActivity : AppCompatActivity() {
         val userExists = userRepo.validateCredentials(username, password)
 
         if (userExists) {
+            showCustomToast(this, "Logged in successfully")
             val intent = Intent(this, ProductsActivity::class.java)
             startActivity(intent)
-            Toast.makeText(this, "Logged in successfully", Toast.LENGTH_SHORT).show()
             finish()
         } else {
-            Toast.makeText(this, "User not found", Toast.LENGTH_SHORT).show()
+            showCustomToast(this, "User not found")
         }
     }
 }

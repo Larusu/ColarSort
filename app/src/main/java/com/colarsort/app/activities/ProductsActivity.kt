@@ -5,7 +5,6 @@ import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.os.Bundle
 import android.provider.MediaStore
-import android.view.LayoutInflater
 import android.view.View
 import android.widget.*
 import androidx.activity.enableEdgeToEdge
@@ -22,8 +21,10 @@ import com.colarsort.app.databinding.ActivityProductsBinding
 import com.colarsort.app.models.Products
 import com.colarsort.app.repository.MaterialsRepo
 import com.colarsort.app.repository.ProductsRepo
+import com.colarsort.app.utils.RecyclerUtils
 import com.colarsort.app.utils.UtilityHelper.compressBitmap
 import com.colarsort.app.utils.UtilityHelper.inputStreamToByteArray
+import com.colarsort.app.utils.UtilityHelper.showCustomToast
 
 class ProductsActivity : AppCompatActivity() {
 
@@ -34,8 +35,8 @@ class ProductsActivity : AppCompatActivity() {
     private lateinit var materialsRepo: MaterialsRepo
     private val productList = ArrayList<Products>()
 
-    private var tempDialogImageView: ImageView? = null // Temporary reference for image picker
-    private var selectedImageBytes: ByteArray? = null // Holds selected image bytes
+    private var tempDialogImageView: ImageView? = null
+    private var selectedImageBytes: ByteArray? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -94,7 +95,7 @@ class ProductsActivity : AppCompatActivity() {
             finish()
         }
         binding.ivProducts.setOnClickListener {
-            Toast.makeText(this, "You are already in products", Toast.LENGTH_SHORT).show()
+            showCustomToast(this, "You are already in Products")
         }
         binding.ivMaterials.setOnClickListener {
             val intent = Intent(this, MaterialsActivity::class.java)
@@ -113,8 +114,12 @@ class ProductsActivity : AppCompatActivity() {
                     R.id.edit_product -> showEditProductDialog(product)
                     R.id.delete_product -> {
                         val successful = productsRepo.deleteColumn(product.id!!)
-                        if (!successful) Toast.makeText(this, "Error deleting product", Toast.LENGTH_SHORT).show()
+                        if (!successful) {
+                            showCustomToast(this, "Delete failed")
+                            return@setOnMenuItemClickListener false
+                        }
 
+                        showCustomToast(this, "Product deleted")
                         val index = productList.indexOf(product)
                         if (index != -1) {
                             productList.removeAt(index)
@@ -160,8 +165,8 @@ class ProductsActivity : AppCompatActivity() {
             .setMessage("Are you sure you want to log out?")
             .setPositiveButton("Yes") { dialog, _ ->
                 dialog.dismiss()
+                showCustomToast(this, "Logged out successfully")
                 startActivity(Intent(this, LoginActivity::class.java))
-                Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show()
                 finish()
             }
             .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
@@ -199,9 +204,25 @@ class ProductsActivity : AppCompatActivity() {
             startActivityForResult(intent, 1001)
         }
 
-        btnSave.setOnClickListener { TODO("Save product") }
-        btnCancel.setOnClickListener { dialog.dismiss() }
+        btnSave.setOnClickListener {
+            val name = etProductName.text.toString().trim()
 
+            if (name.isEmpty()) {
+                showCustomToast(this, "Please enter a product name")
+                return@setOnClickListener
+            }
+
+            val product = Products(null, name, selectedImageBytes)
+            productsRepo.insert(product)
+            showCustomToast(this, "Product added successfully")
+
+            RecyclerUtils.insertedItems(productList, productsRepo.getAll(), adapter)
+
+            tempDialogImageView = null
+            dialog.dismiss()
+        }
+
+        btnCancel.setOnClickListener { dialog.dismiss() }
         dialog.show()
     }
 
@@ -230,7 +251,9 @@ class ProductsActivity : AppCompatActivity() {
         }
 
         // Remove row
-        btnRemove.setOnClickListener { container.removeView(row) }
+        btnRemove.setOnClickListener {
+            container.removeView(row)
+        }
         container.addView(row)
     }
 
@@ -279,27 +302,28 @@ class ProductsActivity : AppCompatActivity() {
         btnSave.setOnClickListener {
             val name = etProductName.text.toString().trim()
             if (name.isEmpty()) {
-                Toast.makeText(this, "Please enter a product name", Toast.LENGTH_SHORT).show()
+                showCustomToast(this, "Please enter a product name")
                 return@setOnClickListener
             }
 
             if (product == null) {
                 productsRepo.insert(Products(null, name, selectedImageBytes))
-                Toast.makeText(this, "Product added", Toast.LENGTH_SHORT).show()
+                showCustomToast(this, "Product added successfully")
             } else {
                 val updated = product.copy(name = name, image = selectedImageBytes ?: product.image)
                 val success = productsRepo.update(updated)
-                Toast.makeText(this, if (success) "Product updated" else "Update failed", Toast.LENGTH_SHORT).show()
+
+                if (success) {
+                    RecyclerUtils.updateItem(productList, updated, adapter) { it.id }
+                    showCustomToast(this, "Product updated successfully")
+                } else {
+                    showCustomToast(this, "Update failed")
+                }
             }
 
-            // TODO: Save material rows if needed
             tempDialogImageView = null
             dialog.dismiss()
-
-            // Refresh RecyclerView
-            productList.clear()
-            productList.addAll(productsRepo.getAll())
-            adapter.notifyDataSetChanged()
+            return@setOnClickListener
         }
 
         btnCancel.setOnClickListener {

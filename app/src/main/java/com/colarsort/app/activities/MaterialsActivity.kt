@@ -23,6 +23,7 @@ import com.colarsort.app.repository.MaterialsRepo
 import com.colarsort.app.utils.UtilityHelper.compressBitmap
 import com.colarsort.app.utils.UtilityHelper.inputStreamToByteArray
 import com.colarsort.app.utils.RecyclerUtils
+import com.colarsort.app.utils.UtilityHelper.showCustomToast
 
 
 class MaterialsActivity : AppCompatActivity() {
@@ -90,7 +91,7 @@ class MaterialsActivity : AppCompatActivity() {
             finish()
         }
         binding.ivMaterials.setOnClickListener {
-            Toast.makeText(this, "You are already in materials", Toast.LENGTH_SHORT).show()
+            showCustomToast(this, "You are already in Materials")
         }
 
         binding.materialsMenu.setOnClickListener { view -> showPopupMenu(view) }
@@ -106,10 +107,11 @@ class MaterialsActivity : AppCompatActivity() {
                     R.id.edit_product -> showEditMaterialDialog(material)
                     R.id.delete_product -> {
                         val successful = materialsRepo.deleteColumn(material.id!!)
-                        if (!successful) Toast.makeText(this, "Error deleting material", Toast.LENGTH_SHORT).show()
+                        if (!successful) showCustomToast(this, "Delete failed")
 
                         val position = materialList.indexOf(material)
                         RecyclerUtils.deleteAt(materialList, position, adapter)
+                        showCustomToast(this, "Material deleted successfully")
                     }
                 }
                 true
@@ -151,7 +153,7 @@ class MaterialsActivity : AppCompatActivity() {
             .setPositiveButton("Yes") { dialog, _ ->
                 dialog.dismiss()
                 startActivity(Intent(this, LoginActivity::class.java))
-                Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show()
+                showCustomToast(this, "Logged out successfully")
                 finish()
             }
             .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
@@ -196,12 +198,13 @@ class MaterialsActivity : AppCompatActivity() {
             val lowStockThreshold = etLowStockThreshold.text.toString().toDoubleOrNull() ?: 0.0
 
             if (name.isEmpty() || unit.isEmpty()) {
-                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
+                showCustomToast(this, "Please fill in all fields")
                 return@setOnClickListener
             }
 
             val material = Materials(null, name, quantity, unit, lowStockThreshold, selectedImageBytes)
             materialsRepo.insert(material)
+            showCustomToast(this, "Material added successfully")
 
             RecyclerUtils.insertedItems(materialList, materialsRepo.getAll(), adapter)
 
@@ -264,19 +267,19 @@ class MaterialsActivity : AppCompatActivity() {
 
             when {
                 name == null -> {
-                    Toast.makeText(this, "Invalid name. Please fill in the field.", Toast.LENGTH_SHORT).show()
+                    showCustomToast(this, "Invalid name. Please fill in the field.")
                     return@setOnClickListener
                 }
                 quantity == null -> {
-                    Toast.makeText(this, "Invalid quantity. Please fill in the field.", Toast.LENGTH_SHORT).show()
+                    showCustomToast(this, "Invalid quantity. Please fill in the field.")
                     return@setOnClickListener
                 }
                 unit == null -> {
-                    Toast.makeText(this, "Invalid unit. Please fill in the field.", Toast.LENGTH_SHORT).show()
+                    showCustomToast(this, "Invalid unit. Please fill in the field.")
                     return@setOnClickListener
                 }
                 threshold == null -> {
-                    Toast.makeText(this, "Invalid threshold. Please fill in the field.", Toast.LENGTH_SHORT).show()
+                    showCustomToast(this, "Invalid threshold. Please fill in the field.")
                     return@setOnClickListener
                 } else -> {
                     val materialData = Materials(material!!.id, name,  quantity, unit, threshold, selectedImageBytes?: material.image)
@@ -287,10 +290,10 @@ class MaterialsActivity : AppCompatActivity() {
 
                     if (success) {
                         RecyclerUtils.updateItem(materialList, materialData, adapter) {it.id}
-                        Toast.makeText(this, "Material updated successfully", Toast.LENGTH_SHORT).show()
+                        showCustomToast(this, "Material updated successfully")
                         return@setOnClickListener
                     } else {
-                        Toast.makeText(this, "Update failed", Toast.LENGTH_SHORT).show()
+                        showCustomToast(this, "Update failed")
                         return@setOnClickListener
                     }
                 }

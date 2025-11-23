@@ -1,8 +1,13 @@
 package com.colarsort.app.utils
 
+import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
+import android.view.LayoutInflater
+import android.widget.TextView
+import android.widget.Toast
 import androidx.core.graphics.scale
+import com.colarsort.app.R
 import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
 
@@ -64,4 +69,37 @@ object UtilityHelper {
 
         return outputStream.toByteArray()
     }
+
+    /**
+     * Show a custom Toast message in any activity.
+     *
+     * @param activity The activity context
+     * @param message The message to display
+     * @param duration Toast.LENGTH_SHORT or Toast.LENGTH_LONG
+     * @param textColor Color resource ID for text (default: white)
+     * @param textSizeSp Text size in sp (default: 14f)
+     */
+    fun showCustomToast(
+        activity: Activity,
+        message: String,
+        duration: Int = Toast.LENGTH_SHORT,
+        textColor: Int = android.R.color.white,
+        textSizeSp: Float = 14f
+    ) {
+        val inflater = LayoutInflater.from(activity)
+        val layout = inflater.inflate(R.layout.custom_toast, null)
+
+        val textView = layout.findViewById<TextView>(R.id.toast_text)
+        textView.text = message
+        textView.setTextColor(activity.resources.getColor(textColor, activity.theme))
+        textView.textSize = textSizeSp
+
+        Toast(activity).apply {
+            this.duration = duration
+            this.view = layout
+            show()
+        }
+    }
 }
+
+
