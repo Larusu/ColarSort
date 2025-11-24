@@ -246,7 +246,6 @@ class ProductsActivity : BaseActivity() {
                 return@setOnClickListener
             }
 
-            // No issues, proceed to save
             val product = Products(null, name, selectedImageBytes)
             productsRepo.insert(product)
 

@@ -25,6 +25,8 @@ import com.colarsort.app.repository.OrdersRepo
 import com.colarsort.app.repository.ProductsRepo
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
 import androidx.core.view.isEmpty
+import com.colarsort.app.databinding.OrderRowBinding
+import com.colarsort.app.databinding.OrdersDialogAddProductBinding
 
 class OrdersActivity : BaseActivity() {
 
@@ -78,43 +80,44 @@ class OrdersActivity : BaseActivity() {
         }
 
         binding.tvClearOrderList.setOnClickListener {
-            if (findViewById<LinearLayout>(R.id.layout_materials_container).isEmpty()) {
+            if (binding.layoutMaterialsContainer.isEmpty()) {
                 showCustomToast(this, "Order List is empty")
                 return@setOnClickListener
             }
-            val alertDialog = AlertDialog.Builder(this)
+            AlertDialog.Builder(this)
                 .setTitle("Clear Order List")
                 .setMessage("Are you sure you want to clear the order list?")
                 .setPositiveButton("Yes") { _, _ ->
-                    val container = findViewById<LinearLayout>(R.id.layout_materials_container)
-                    container.removeAllViews()
+                    binding.layoutMaterialsContainer.removeAllViews()
                     showCustomToast(this, "Order List Cleared")
                 }
                 .setNegativeButton("No") { dialog, _ -> dialog.dismiss() }
-            alertDialog.show()
+                .show()
         }
 
         binding.tvConfirmOrder.setOnClickListener {
             val customerName = binding.etCustomerName.text.toString().trim()
 
+            if (customerName.isEmpty()) {
+                showCustomToast(this, "Please enter a customer name")
+                return@setOnClickListener
+            }
 
-
-            if (findViewById<LinearLayout>(R.id.layout_materials_container).isEmpty()) {
+            if (binding.layoutMaterialsContainer.isEmpty()) {
                 showCustomToast(this, "Order List is empty")
                 return@setOnClickListener
             }
 
-            val alertDialog = AlertDialog.Builder(this)
+            AlertDialog.Builder(this)
                 .setTitle("Confirm Order")
                 .setMessage("Are you sure you want to confirm the order?")
                 .setPositiveButton("Yes") { _, _ ->
-                    val container = findViewById<LinearLayout>(R.id.layout_materials_container)
                     // TODO: Add order to database
-                    container.removeAllViews()
+                    binding.layoutMaterialsContainer.removeAllViews()
                     showCustomToast(this, "Order Confirmed")
                 }
                 .setNegativeButton("No") { dialog, _ -> dialog.dismiss() }
-            alertDialog.show()
+                .show()
         }
 
     }
@@ -149,26 +152,22 @@ class OrdersActivity : BaseActivity() {
     }
 
     // Add Product Dialog
-    @SuppressLint("SetTextI18n")
     private fun showAddProductDialog() {
-        val dialogView = layoutInflater.inflate(R.layout.orders_dialog_add_product, null)
-        val recyclerViewProducts = dialogView.findViewById<RecyclerView>(R.id.recyclerViewProducts)
-
-        // Set up RecyclerView in grid 3 columns
-        recyclerViewProducts.layoutManager = GridLayoutManager(this, 3)
-
-        val products = ArrayList(productsRepo.getAll())
-        val adapter = ProductAdapter(products)
-        recyclerViewProducts.adapter = adapter
-
-        // Reference to the LinearLayout in main activity where selected products are added
-        val container = findViewById<LinearLayout>(R.id.layout_materials_container)
-
-        // Create the dialog
+        // Use ViewBinding for the dialog
+        val dialogBinding = OrdersDialogAddProductBinding.inflate(layoutInflater)
         val dialog = AlertDialog.Builder(this)
-            .setView(dialogView)
+            .setView(dialogBinding.root)
             .setCancelable(true)
             .create()
+
+        // Setup RecyclerView with grid 3 columns
+        val products = ArrayList(productsRepo.getAll())
+        val adapter = ProductAdapter(products)
+        dialogBinding.recyclerViewProducts.layoutManager = GridLayoutManager(this, 3)
+        dialogBinding.recyclerViewProducts.adapter = adapter
+
+        // Reference to the container in main activity where selected products are added
+        val container = binding.layoutMaterialsContainer
 
         // Product click listener
         adapter.onItemMoreClickListener = { product: Products, view: View ->
@@ -177,7 +176,7 @@ class OrdersActivity : BaseActivity() {
             popup.setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
                     R.id.add_product -> {
-                        // Check if product is already on the list
+                        // Check if product is already added
                         for (i in 0 until container.childCount) {
                             val row = container.getChildAt(i)
                             val tvProductName = row.findViewById<TextView>(R.id.order_product_name)
@@ -187,48 +186,37 @@ class OrdersActivity : BaseActivity() {
                             }
                         }
 
-                        // Inflate a row layout for the selected product
-                        val row = layoutInflater.inflate(R.layout.order_row, container, false)
-                        val tvProductName = row.findViewById<TextView>(R.id.order_product_name)
-                        val etQuantity = row.findViewById<EditText>(R.id.order_product_quantity)
-                        val btnRemove = row.findViewById<ImageView>(R.id.btn_remove_row)
-                        val ivProductImage = row.findViewById<ImageView>(R.id.order_product_image)
-                        val addQuantity = row.findViewById<ImageView>(R.id.quantity_add)
-                        val minusQuantity = row.findViewById<ImageView>(R.id.quantity_minus)
-
-                        // Set product name, image, quantity
-                        tvProductName.text = product.name
-                        etQuantity.setText("1")
+                        // Inflate row using binding
+                        val rowBinding = OrderRowBinding.inflate(layoutInflater, container, false)
+                        rowBinding.orderProductName.text = product.name
+                        rowBinding.orderProductQuantity.setText("1")
 
                         product.image?.let { bytes ->
                             val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                            ivProductImage.setImageBitmap(bitmap)
+                            rowBinding.orderProductImage.setImageBitmap(bitmap)
                         }
 
                         // Quantity buttons
-                        addQuantity.setOnClickListener {
-                            val currentQuantity = etQuantity.text.toString().toIntOrNull() ?: 0
-                            etQuantity.setText((currentQuantity + 1).toString())
+                        rowBinding.quantityAdd.setOnClickListener {
+                            val currentQty = rowBinding.orderProductQuantity.text.toString().toIntOrNull() ?: 0
+                            rowBinding.orderProductQuantity.setText((currentQty + 1).toString())
+                        }
+                        rowBinding.quantityMinus.setOnClickListener {
+                            val currentQty = rowBinding.orderProductQuantity.text.toString().toIntOrNull() ?: 0
+                            if (currentQty > 1) rowBinding.orderProductQuantity.setText((currentQty - 1).toString())
                         }
 
-                        minusQuantity.setOnClickListener {
-                            val currentQuantity = etQuantity.text.toString().toIntOrNull() ?: 0
-                            if (currentQuantity > 1) {
-                                etQuantity.setText((currentQuantity - 1).toString())
-                            }
-                        }
-
-                        // Remove row button
-                        btnRemove.setOnClickListener {
-                            container.removeView(row)
+                        // Remove row
+                        rowBinding.btnRemoveRow.setOnClickListener {
+                            container.removeView(rowBinding.root)
                             showCustomToast(this, "Product removed from the List")
                         }
 
-                        // Add row to the LinearLayout
-                        container.addView(row)
+                        // Add row to container
+                        container.addView(rowBinding.root)
                         showCustomToast(this, "Product added to List")
 
-                        // Dismiss the dialog after adding
+                        // Dismiss dialog
                         dialog.dismiss()
                         true
                     }
@@ -239,6 +227,7 @@ class OrdersActivity : BaseActivity() {
             }
             popup.show()
         }
+
         dialog.show()
     }
 
