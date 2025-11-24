@@ -6,10 +6,14 @@ import android.graphics.Color
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.View
-import android.widget.*
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
+import android.widget.EditText
+import android.widget.ImageView
+import android.widget.PopupMenu
+import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -26,7 +30,7 @@ import com.colarsort.app.utils.RecyclerUtils
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
 
 
-class MaterialsActivity : AppCompatActivity() {
+class MaterialsActivity : BaseActivity() {
 
     private lateinit var binding: ActivityMaterialsBinding
     private lateinit var dbHelper: DatabaseHelper

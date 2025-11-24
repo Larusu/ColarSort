@@ -1,26 +1,18 @@
 package com.colarsort.app.activities
 
-import android.content.ContentValues
 import android.content.Intent
 import android.os.Bundle
 import android.text.InputType
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.colarsort.app.R
-import com.colarsort.app.adapters.ProductAdapter
 import com.colarsort.app.database.DatabaseHelper
-import com.colarsort.app.database.UserTable
 import com.colarsort.app.databinding.ActivityLoginBinding
-import com.colarsort.app.models.Products
-import com.colarsort.app.models.Users
-import com.colarsort.app.repository.ProductsRepo
 import com.colarsort.app.repository.UsersRepo
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
 
-class LoginActivity : AppCompatActivity() {
+class LoginActivity : BaseActivity() {
 
     private lateinit var binding: ActivityLoginBinding
     private lateinit var dbHelper: DatabaseHelper
@@ -97,4 +89,5 @@ class LoginActivity : AppCompatActivity() {
             showCustomToast(this, "User not found")
         }
     }
+
 }

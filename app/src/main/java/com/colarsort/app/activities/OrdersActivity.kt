@@ -1,7 +1,6 @@
 package com.colarsort.app.activities
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.os.Bundle
@@ -11,11 +10,9 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.TextView
-import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.GridLayoutManager
@@ -29,7 +26,7 @@ import com.colarsort.app.repository.ProductsRepo
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
 import androidx.core.view.isEmpty
 
-class OrdersActivity : AppCompatActivity() {
+class OrdersActivity : BaseActivity() {
 
     private lateinit var binding: ActivityOrdersBinding
     private lateinit var dbHelper: DatabaseHelper
