@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.View
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.EditText
@@ -22,6 +23,7 @@ import com.colarsort.app.R
 import com.colarsort.app.adapters.MaterialAdapter
 import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.databinding.ActivityMaterialsBinding
+import com.colarsort.app.databinding.DialogAddMaterialBinding
 import com.colarsort.app.models.Materials
 import com.colarsort.app.repository.MaterialsRepo
 import com.colarsort.app.utils.UtilityHelper.compressBitmap
@@ -168,38 +170,42 @@ class MaterialsActivity : BaseActivity() {
     private fun showAddMaterialDialog() {
         selectedImageBytes = null
 
-        val dialogView = layoutInflater.inflate(R.layout.dialog_add_material, null)
-        val etName = dialogView.findViewById<EditText>(R.id.et_material_name)
-        val etUnit = dialogView.findViewById<AutoCompleteTextView>(R.id.et_material_unit)
-        val etQuantity = dialogView.findViewById<EditText>(R.id.et_material_quantity)
-        val etLowStockThreshold = dialogView.findViewById<EditText>(R.id.et_low_stock_threshold)
-        val btnAdd = dialogView.findViewById<TextView>(R.id.tv_save)
-        val btnCancel = dialogView.findViewById<TextView>(R.id.tv_cancel)
-        val dialogImageView = dialogView.findViewById<ImageView>(R.id.iv_material_image)
+        val dialogBinding = DialogAddMaterialBinding.inflate(layoutInflater)
 
         val dialog = AlertDialog.Builder(this)
-            .setView(dialogView)
+            .setView(dialogBinding.root)
             .setCancelable(true)
             .create()
         dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
 
+        // Setup unit spinner like addMaterialRow
         val units = arrayOf("m", "pcs", "roll", "ft", "in", "yard")
-        val unitAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, units)
-        etUnit.setAdapter(unitAdapter)
-        etUnit.setOnClickListener { etUnit.showDropDown() }
+        val unitAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, units)
+        unitAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        dialogBinding.spMaterialUnit.adapter = unitAdapter
 
-        dialogImageView.setOnClickListener {
-            tempDialogImageView = dialogImageView
+        // Change selected text color to white
+        dialogBinding.spMaterialUnit.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                (view as? TextView)?.setTextColor(Color.WHITE)
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+
+        // Image picker
+        dialogBinding.ivMaterialImage.setOnClickListener {
+            tempDialogImageView = dialogBinding.ivMaterialImage
             val intent = Intent(Intent.ACTION_PICK)
             intent.type = "image/*"
             startActivityForResult(intent, 1001)
         }
 
-        btnAdd.setOnClickListener {
-            val name = etName.text.toString().trim()
-            val unit = etUnit.text.toString().trim()
-            val quantity = etQuantity.text.toString().toDoubleOrNull() ?: 0.0
-            val lowStockThreshold = etLowStockThreshold.text.toString().toDoubleOrNull() ?: 0.0
+        // Save button
+        dialogBinding.tvSave.setOnClickListener {
+            val name = dialogBinding.etMaterialName.text.toString().trim()
+            val unit = dialogBinding.spMaterialUnit.selectedItem.toString()
+            val quantity = dialogBinding.etMaterialQuantity.text.toString().toDoubleOrNull() ?: 0.0
+            val lowStockThreshold = dialogBinding.etLowStockThreshold.text.toString().toDoubleOrNull() ?: 0.0
 
             if (name.isEmpty() || unit.isEmpty()) {
                 showCustomToast(this, "Please fill in all fields")
@@ -216,58 +222,71 @@ class MaterialsActivity : BaseActivity() {
             dialog.dismiss()
         }
 
-        btnCancel.setOnClickListener { dialog.dismiss() }
+        // Cancel button
+        dialogBinding.tvCancel.setOnClickListener { dialog.dismiss() }
+
         dialog.show()
     }
+
+
+
 
     // Show edit material dialog
     private fun showEditMaterialDialog(material: Materials?) {
         selectedImageBytes = material?.image
 
-        val dialogView = layoutInflater.inflate(R.layout.dialog_add_material, null)
-        val tvAddMaterial = dialogView.findViewById<TextView>(R.id.tv_add_material)
-        val etName = dialogView.findViewById<EditText>(R.id.et_material_name)
-        val etUnit = dialogView.findViewById<AutoCompleteTextView>(R.id.et_material_unit)
-        val etQuantity = dialogView.findViewById<EditText>(R.id.et_material_quantity)
-        val etLowStockThreshold = dialogView.findViewById<EditText>(R.id.et_low_stock_threshold)
-        val btnSave = dialogView.findViewById<TextView>(R.id.tv_save)
-        val btnCancel = dialogView.findViewById<TextView>(R.id.tv_cancel)
-        val dialogImageView = dialogView.findViewById<ImageView>(R.id.iv_material_image)
+        // Inflate using binding
+        val dialogBinding = DialogAddMaterialBinding.inflate(layoutInflater)
 
-        tvAddMaterial.text = if (material == null) "Add Material" else "Edit Material"
+        // Set dialog title
+        dialogBinding.tvAddMaterial.text = if (material == null) "Add Material" else "Edit Material"
 
         val dialog = AlertDialog.Builder(this)
-            .setView(dialogView)
+            .setView(dialogBinding.root)
             .setCancelable(true)
             .create()
         dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
 
+        // Setup unit spinner like addMaterialRow
         val units = arrayOf("m", "pcs", "roll", "ft", "in", "yard")
-        val unitAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, units)
-        etUnit.setAdapter(unitAdapter)
-        etUnit.setOnClickListener { etUnit.showDropDown() }
+        val unitAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, units)
+        unitAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        dialogBinding.spMaterialUnit.adapter = unitAdapter
 
-        // Pre-fill fields if editing
-        material?.let {
-            etName.setText(it.name)
-            etUnit.setText(it.unit)
-            etQuantity.setText(it.quantity.toString())
-            etLowStockThreshold.setText(it.stockThreshold.toString())
-            it.image?.let { bytes -> dialogImageView.setImageBitmap(BitmapFactory.decodeByteArray(bytes, 0, bytes.size)) }
+        // Set spinner selected text color to white
+        dialogBinding.spMaterialUnit.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                (view as? TextView)?.setTextColor(Color.WHITE)
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
-        dialogImageView.setOnClickListener {
-            tempDialogImageView = dialogImageView
+        // Pre-select the current unit if editing
+        material?.let {
+            dialogBinding.etMaterialName.setText(it.name)
+            val unitPosition = units.indexOf(it.unit).takeIf { pos -> pos >= 0 } ?: 0
+            dialogBinding.spMaterialUnit.setSelection(unitPosition)
+            dialogBinding.etMaterialQuantity.setText(it.quantity.toString())
+            dialogBinding.etLowStockThreshold.setText(it.stockThreshold.toString())
+            it.image?.let { bytes ->
+                dialogBinding.ivMaterialImage.setImageBitmap(BitmapFactory.decodeByteArray(bytes, 0, bytes.size))
+            }
+        }
+
+        // Image picker
+        dialogBinding.ivMaterialImage.setOnClickListener {
+            tempDialogImageView = dialogBinding.ivMaterialImage
             val intent = Intent(Intent.ACTION_PICK)
             intent.type = "image/*"
             startActivityForResult(intent, 1001)
         }
 
-        btnSave.setOnClickListener {
-            val name: String? = etName.text.toString().trim().ifEmpty { null }
-            val quantity: Double? = etQuantity.text.toString().toDoubleOrNull()?.takeIf { it != 0.0 }
-            val unit: String? = etUnit.text.toString().trim().ifEmpty { null }
-            val threshold: Double? = etLowStockThreshold.text.toString().toDoubleOrNull()?.takeIf { it != 0.0 }
+        // Save button
+        dialogBinding.tvSave.setOnClickListener {
+            val name: String? = dialogBinding.etMaterialName.text.toString().trim().ifEmpty { null }
+            val quantity: Double? = dialogBinding.etMaterialQuantity.text.toString().toDoubleOrNull()?.takeIf { it != 0.0 }
+            val unit: String? = dialogBinding.spMaterialUnit.selectedItem.toString().takeIf { it.isNotEmpty() }
+            val threshold: Double? = dialogBinding.etLowStockThreshold.text.toString().toDoubleOrNull()?.takeIf { it != 0.0 }
 
             when {
                 name == null -> {
@@ -279,36 +298,45 @@ class MaterialsActivity : BaseActivity() {
                     return@setOnClickListener
                 }
                 unit == null -> {
-                    showCustomToast(this, "Invalid unit. Please fill in the field.")
+                    showCustomToast(this, "Invalid unit. Please select a unit.")
                     return@setOnClickListener
                 }
                 threshold == null -> {
                     showCustomToast(this, "Invalid threshold. Please fill in the field.")
                     return@setOnClickListener
-                } else -> {
-                    val materialData = Materials(material!!.id, name,  quantity, unit, threshold, selectedImageBytes?: material.image)
-                    val success =  materialsRepo.update(materialData)
+                }
+                else -> {
+                    val materialData = Materials(
+                        material!!.id,
+                        name,
+                        quantity,
+                        unit,
+                        threshold,
+                        selectedImageBytes ?: material.image
+                    )
+                    val success = materialsRepo.update(materialData)
 
                     tempDialogImageView = null
                     dialog.dismiss()
 
                     if (success) {
-                        RecyclerUtils.updateItem(materialList, materialData, adapter) {it.id}
+                        RecyclerUtils.updateItem(materialList, materialData, adapter) { it.id }
                         showCustomToast(this, "Material updated successfully")
-                        return@setOnClickListener
                     } else {
                         showCustomToast(this, "Update failed")
-                        return@setOnClickListener
                     }
                 }
             }
         }
 
-        btnCancel.setOnClickListener {
+        // Cancel button
+        dialogBinding.tvCancel.setOnClickListener {
             tempDialogImageView = null
             dialog.dismiss()
         }
 
         dialog.show()
     }
+
+
 }

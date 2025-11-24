@@ -95,6 +95,10 @@ class OrdersActivity : BaseActivity() {
         }
 
         binding.tvConfirmOrder.setOnClickListener {
+            val customerName = binding.etCustomerName.text.toString().trim()
+
+
+
             if (findViewById<LinearLayout>(R.id.layout_materials_container).isEmpty()) {
                 showCustomToast(this, "Order List is empty")
                 return@setOnClickListener

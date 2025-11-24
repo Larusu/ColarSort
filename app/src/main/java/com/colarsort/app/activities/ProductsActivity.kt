@@ -24,6 +24,8 @@ import com.colarsort.app.R
 import com.colarsort.app.adapters.ProductAdapter
 import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.databinding.ActivityProductsBinding
+import com.colarsort.app.databinding.DialogAddProductBinding
+import com.colarsort.app.databinding.MaterialRowBinding
 import com.colarsort.app.models.Products
 import com.colarsort.app.repository.MaterialsRepo
 import com.colarsort.app.repository.ProductsRepo
@@ -40,7 +42,6 @@ class ProductsActivity : BaseActivity() {
     private lateinit var adapter: ProductAdapter
     private lateinit var materialsRepo: MaterialsRepo
     private val productList = ArrayList<Products>()
-
     private var tempDialogImageView: ImageView? = null
     private var selectedImageBytes: ByteArray? = null
 
@@ -183,130 +184,162 @@ class ProductsActivity : BaseActivity() {
     private fun showAddProductDialog() {
         selectedImageBytes = null
 
-        val dialogView = layoutInflater.inflate(R.layout.dialog_add_product, null)
-        val btnSave = dialogView.findViewById<TextView>(R.id.tv_save)
-        val btnCancel = dialogView.findViewById<TextView>(R.id.tv_cancel)
-        val ivProductImage = dialogView.findViewById<ImageView>(R.id.iv_product_image)
-        val etProductName = dialogView.findViewById<EditText>(R.id.et_product_name)
-        val layoutMaterialsContainer = dialogView.findViewById<LinearLayout>(R.id.layout_materials_container)
-        val btnAddRow = dialogView.findViewById<ImageView>(R.id.iv_add_material_row)
+        val dialogBinding = DialogAddProductBinding.inflate(layoutInflater)
 
         val dialog = AlertDialog.Builder(this)
-            .setView(dialogView)
+            .setView(dialogBinding.root)
             .setCancelable(true)
             .create()
         dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
 
+        val layoutMaterialsContainer = dialogBinding.layoutMaterialsContainer
         addMaterialRow(layoutMaterialsContainer) // Add first row
 
         // "+" button adds more rows
-        btnAddRow.setOnClickListener { addMaterialRow(layoutMaterialsContainer) }
+        dialogBinding.ivAddMaterialRow.setOnClickListener {
+            addMaterialRow(layoutMaterialsContainer)
+        }
 
         // Image picker
-        ivProductImage.setOnClickListener {
-            tempDialogImageView = ivProductImage
+        dialogBinding.ivProductImage.setOnClickListener {
+            tempDialogImageView = dialogBinding.ivProductImage
             val intent = Intent(Intent.ACTION_PICK)
             intent.type = "image/*"
             startActivityForResult(intent, 1001)
         }
 
-        btnSave.setOnClickListener {
-            val name = etProductName.text.toString().trim()
+        // Save button
+        dialogBinding.tvSave.setOnClickListener {
+            val name = dialogBinding.etProductName.text.toString().trim()
 
             if (name.isEmpty()) {
                 showCustomToast(this, "Please enter a product name")
                 return@setOnClickListener
             }
 
+            val selectedMaterials = mutableListOf<String>()
+            for (i in 0 until layoutMaterialsContainer.childCount) {
+                val row = layoutMaterialsContainer.getChildAt(i)
+                val rowBinding = MaterialRowBinding.bind(row)
+
+                val materialName = rowBinding.sAvailableMaterials.selectedItem as? String
+                val quantityText = rowBinding.etMaterialQuantity.text.toString().trim()
+                val quantity = quantityText.toDoubleOrNull()
+
+                if (materialName == null) {
+                    showCustomToast(this, "Please select a material in row ${i + 1}")
+                    return@setOnClickListener
+                }
+
+                if (quantity == null || quantity <= 0) {
+                    showCustomToast(this, "Please enter a valid quantity for material ${materialName}")
+                    return@setOnClickListener
+                }
+
+                selectedMaterials.add(materialName)
+            }
+
+            // Check for duplicate materials
+            val duplicates = selectedMaterials.groupingBy { it }.eachCount().filter { it.value > 1 }.keys
+            if (duplicates.isNotEmpty()) {
+                showCustomToast(this, "Duplicate materials found: ${duplicates.joinToString()}")
+                return@setOnClickListener
+            }
+
+            // No issues, proceed to save
             val product = Products(null, name, selectedImageBytes)
             productsRepo.insert(product)
-            showCustomToast(this, "Product added successfully")
 
+            showCustomToast(this, "Product added successfully")
             RecyclerUtils.insertedItems(productList, productsRepo.getAll(), adapter)
 
             tempDialogImageView = null
             dialog.dismiss()
         }
 
-        btnCancel.setOnClickListener { dialog.dismiss() }
+
+
+        // Cancel button
+        dialogBinding.tvCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
         dialog.show()
     }
 
+
     //  Add a material row
     private fun addMaterialRow(container: LinearLayout) {
-        val row = layoutInflater.inflate(R.layout.material_row, container, false)
-        val spinner = row.findViewById<Spinner>(R.id.s_available_materials)
-        val etQty = row.findViewById<EditText>(R.id.et_material_quantity)
-        val tvUnit = row.findViewById<TextView>(R.id.tv_unit)
-        val btnRemove = row.findViewById<ImageView>(R.id.btn_remove_row)
+        // Inflate using binding
+        val rowBinding = MaterialRowBinding.inflate(layoutInflater, container, false)
 
         // Put materials in the spinner
         val materials = materialsRepo.getAll()
         val materialNames = materials.map { it.name }
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, materialNames)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinner.adapter = adapter
+        rowBinding.sAvailableMaterials.adapter = adapter
 
         // Update unit when material selected
-        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+        rowBinding.sAvailableMaterials.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                 (view as? TextView)?.setTextColor(Color.WHITE) // Selected text white
-                tvUnit.text = materials[position].unit
+                rowBinding.tvUnit.text = materials[position].unit
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
         // Remove row
-        btnRemove.setOnClickListener {
-            container.removeView(row)
+        rowBinding.btnRemoveRow.setOnClickListener {
+            container.removeView(rowBinding.root)
         }
-        container.addView(row)
+
+        // Add the row to the container
+        container.addView(rowBinding.root)
     }
+
 
     //  Show Edit Product dialog
     private fun showEditProductDialog(product: Products? = null) {
         selectedImageBytes = product?.image
 
-        val dialogView = layoutInflater.inflate(R.layout.dialog_add_product, null)
-        val tvAddProduct = dialogView.findViewById<TextView>(R.id.tv_add_product)
-        val etProductName = dialogView.findViewById<EditText>(R.id.et_product_name)
-        val ivProductImage = dialogView.findViewById<ImageView>(R.id.iv_product_image)
-        val layoutMaterialsContainer = dialogView.findViewById<LinearLayout>(R.id.layout_materials_container)
-        val btnAddRow = dialogView.findViewById<ImageView>(R.id.iv_add_material_row)
-        val btnSave = dialogView.findViewById<TextView>(R.id.tv_save)
-        val btnCancel = dialogView.findViewById<TextView>(R.id.tv_cancel)
+        // Inflate using binding
+        val dialogBinding = DialogAddProductBinding.inflate(layoutInflater)
 
-        tvAddProduct.text = if (product == null) "Add Product" else "Edit Product"
+        // Set dialog title
+        dialogBinding.tvAddProduct.text = if (product == null) "Add Product" else "Edit Product"
 
         val dialog = AlertDialog.Builder(this)
-            .setView(dialogView)
+            .setView(dialogBinding.root)
             .setCancelable(true)
             .create()
         dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
 
         // Pre-fill fields if editing
         product?.let {
-            etProductName.setText(it.name)
+            dialogBinding.etProductName.setText(it.name)
             it.image?.let { bytes ->
-                ivProductImage.setImageBitmap(BitmapFactory.decodeByteArray(bytes, 0, bytes.size))
+                dialogBinding.ivProductImage.setImageBitmap(BitmapFactory.decodeByteArray(bytes, 0, bytes.size))
             }
-            addMaterialRow(layoutMaterialsContainer) // Placeholder for materials
-        } ?: addMaterialRow(layoutMaterialsContainer) // Placeholder row for new product
+            addMaterialRow(dialogBinding.layoutMaterialsContainer) // Placeholder for materials
+        } ?: addMaterialRow(dialogBinding.layoutMaterialsContainer) // Placeholder for new product
 
         // Image picker
-        ivProductImage.setOnClickListener {
-            tempDialogImageView = ivProductImage
+        dialogBinding.ivProductImage.setOnClickListener {
+            tempDialogImageView = dialogBinding.ivProductImage
             val intent = Intent(Intent.ACTION_PICK)
             intent.type = "image/*"
             startActivityForResult(intent, 1001)
         }
 
         // "+" button adds material rows
-        btnAddRow.setOnClickListener { addMaterialRow(layoutMaterialsContainer) }
+        dialogBinding.ivAddMaterialRow.setOnClickListener {
+            addMaterialRow(dialogBinding.layoutMaterialsContainer)
+        }
 
         // Save product
-        btnSave.setOnClickListener {
-            val name = etProductName.text.toString().trim()
+        dialogBinding.tvSave.setOnClickListener {
+            val name = dialogBinding.etProductName.text.toString().trim()
             if (name.isEmpty()) {
                 showCustomToast(this, "Please enter a product name")
                 return@setOnClickListener
@@ -329,14 +362,15 @@ class ProductsActivity : BaseActivity() {
 
             tempDialogImageView = null
             dialog.dismiss()
-            return@setOnClickListener
         }
 
-        btnCancel.setOnClickListener {
+        // Cancel button
+        dialogBinding.tvCancel.setOnClickListener {
             tempDialogImageView = null
             dialog.dismiss()
         }
 
         dialog.show()
     }
+
 }

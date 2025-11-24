@@ -80,6 +80,7 @@
                 android:singleLine="true"/>
 
             <EditText
+                android:id="@+id/et_customer_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="0.6"
