@@ -5,7 +5,7 @@ import android.database.Cursor
 import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.models.RowConversion
 
-abstract class CRUDRepo<T : RowConversion>(private val dbHelper: DatabaseHelper)
+abstract class CRUDRepo<T : RowConversion>(protected val dbHelper: DatabaseHelper)
 {
     /**
      * Column names for this table. The order MUST match the order of values returned by
@@ -29,7 +29,7 @@ abstract class CRUDRepo<T : RowConversion>(private val dbHelper: DatabaseHelper)
         val values = model.toRow()
         val cv = ContentValues()
 
-        for (i in values.indices)
+        for (i in 1 until values.size)
         {
             val column = tableRows[i]
             val value = values[i]

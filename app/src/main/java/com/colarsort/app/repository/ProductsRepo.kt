@@ -1,6 +1,7 @@
 package com.colarsort.app.repository
 
 import android.database.Cursor
+import android.util.Log
 import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.database.ProductsTable
 import com.colarsort.app.models.Products
@@ -21,5 +22,19 @@ class ProductsRepo(dbHelper: DatabaseHelper) : CRUDRepo<Products>(dbHelper)
             name = cursor.getString(cursor.getColumnIndexOrThrow(ProductsTable.NAME)),
             image = cursor.getBlob(cursor.getColumnIndexOrThrow(ProductsTable.IMAGE))
         )
+    }
+
+    fun getLastInsertedId() : Int
+    {
+        val db = dbHelper.writableDatabase
+        var latestId : Int = -1
+        val cursor = db.rawQuery("SELECT MAX(${tableRows[0]}) FROM $tableName", null)
+
+        cursor.use {
+            if(it.moveToFirst()) latestId = it.getLong(0).toInt()
+        }
+
+        db.close()
+        return latestId
     }
 }

@@ -8,11 +8,9 @@ import android.provider.MediaStore
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.PopupMenu
-import android.widget.Spinner
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
@@ -26,8 +24,10 @@ import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.databinding.ActivityProductsBinding
 import com.colarsort.app.databinding.DialogAddProductBinding
 import com.colarsort.app.databinding.MaterialRowBinding
+import com.colarsort.app.models.ProductMaterials
 import com.colarsort.app.models.Products
 import com.colarsort.app.repository.MaterialsRepo
+import com.colarsort.app.repository.ProductMaterialsRepo
 import com.colarsort.app.repository.ProductsRepo
 import com.colarsort.app.utils.RecyclerUtils
 import com.colarsort.app.utils.UtilityHelper.compressBitmap
@@ -38,9 +38,10 @@ class ProductsActivity : BaseActivity() {
 
     private lateinit var binding: ActivityProductsBinding
     private lateinit var dbHelper: DatabaseHelper
-    private lateinit var productsRepo: ProductsRepo
     private lateinit var adapter: ProductAdapter
+    private lateinit var productsRepo: ProductsRepo
     private lateinit var materialsRepo: MaterialsRepo
+    private lateinit var productMaterialsRepo: ProductMaterialsRepo
     private val productList = ArrayList<Products>()
     private var tempDialogImageView: ImageView? = null
     private var selectedImageBytes: ByteArray? = null
@@ -53,6 +54,7 @@ class ProductsActivity : BaseActivity() {
         dbHelper = DatabaseHelper(this)
         productsRepo = ProductsRepo(dbHelper)
         materialsRepo = MaterialsRepo(dbHelper)
+        productMaterialsRepo = ProductMaterialsRepo(dbHelper)
 
         // Setup view binding
         binding = ActivityProductsBinding.inflate(layoutInflater)
@@ -217,10 +219,13 @@ class ProductsActivity : BaseActivity() {
                 return@setOnClickListener
             }
 
-            val selectedMaterials = mutableListOf<String>()
+            // Collect selected materials
+            val selectedMaterials = mutableListOf<Pair<Int, Double>>() // Pair<materialId, quantity>
             for (i in 0 until layoutMaterialsContainer.childCount) {
                 val row = layoutMaterialsContainer.getChildAt(i)
-                val rowBinding = MaterialRowBinding.bind(row)
+
+                // safer retrieval of binding
+                val rowBinding = (row.tag as? MaterialRowBinding) ?: MaterialRowBinding.bind(row)
 
                 val materialName = rowBinding.sAvailableMaterials.selectedItem as? String
                 val quantityText = rowBinding.etMaterialQuantity.text.toString().trim()
@@ -232,36 +237,51 @@ class ProductsActivity : BaseActivity() {
                 }
 
                 if (quantity == null || quantity <= 0) {
-                    showCustomToast(this, "Please enter a valid quantity for material ${materialName}")
+                    showCustomToast(this, "Please enter a valid quantity for material $materialName")
                     return@setOnClickListener
                 }
 
-                selectedMaterials.add(materialName)
+                // Get materialId from the repository
+                val material = materialsRepo.getAll().firstOrNull { it.name == materialName }
+                if (material == null) {
+                    showCustomToast(this, "Material $materialName not found")
+                    return@setOnClickListener
+                }
+
+                selectedMaterials.add(material.id!! to quantity)
             }
 
             // Check for duplicate materials
-            val duplicates = selectedMaterials.groupingBy { it }.eachCount().filter { it.value > 1 }.keys
+            val duplicates = selectedMaterials.map { it.first }.groupingBy { it }.eachCount().filter { it.value > 1 }.keys
             if (duplicates.isNotEmpty()) {
-                showCustomToast(this, "Duplicate materials found: ${duplicates.joinToString()}")
+                val duplicateNames = duplicates.mapNotNull { id -> materialsRepo.getAll().firstOrNull { it.id == id }?.name }
+                showCustomToast(this, "Duplicate materials found: ${duplicateNames.joinToString()}")
                 return@setOnClickListener
             }
 
+            // Insert the product first
             val product = Products(null, name, selectedImageBytes)
             productsRepo.insert(product)
 
-            showCustomToast(this, "Product added successfully")
+            // Get the last inserted product ID
+            val productId = productsRepo.getLastInsertedId()
+
+            // Insert into ProductMaterials table
+            selectedMaterials.forEach { (materialId, quantityRequired) ->
+                val productMaterial =
+                    ProductMaterials(null, productId, materialId, quantityRequired)
+                productMaterialsRepo.insert(productMaterial)
+            }
+
+            showCustomToast(this, "Product and materials added successfully")
             RecyclerUtils.insertedItems(productList, productsRepo.getAll(), adapter)
 
             tempDialogImageView = null
             dialog.dismiss()
         }
 
-
-
         // Cancel button
-        dialogBinding.tvCancel.setOnClickListener {
-            dialog.dismiss()
-        }
+        dialogBinding.tvCancel.setOnClickListener { dialog.dismiss() }
 
         dialog.show()
     }
@@ -274,7 +294,13 @@ class ProductsActivity : BaseActivity() {
 
         // Put materials in the spinner
         val materials = materialsRepo.getAll()
-        val materialNames = materials.map { it.name }
+
+        if (materials.isEmpty()) {
+            showCustomToast(this, "No materials available. Please add materials first.")
+            return
+        }
+
+        val materialNames = materials.map { it.name ?: "Unknown" }
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, materialNames)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         rowBinding.sAvailableMaterials.adapter = adapter
@@ -292,6 +318,9 @@ class ProductsActivity : BaseActivity() {
         rowBinding.btnRemoveRow.setOnClickListener {
             container.removeView(rowBinding.root)
         }
+
+        // store binding in tag so save loop can read it later
+        rowBinding.root.tag = rowBinding
 
         // Add the row to the container
         container.addView(rowBinding.root)
