@@ -5,6 +5,18 @@ import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.database.ProductionStatusTable
 import com.colarsort.app.models.ProductionStatus
 
+data class ProductionStatusDisplay(
+    val productionStatusId: Int,
+    val productName: String,
+    val orderId: Int,
+    val orderItemId: Int,
+    val orderItemsQuantity: Int,
+    var cuttingStatus: Boolean,
+    var stitchingStatus: Boolean,
+    var embroideryStatus: Boolean,
+    var finishingStatus: Boolean
+)
+
 class ProductionStatusRepo(dbHelper: DatabaseHelper) : CRUDRepo<ProductionStatus>(dbHelper)
 {
     override val tableName: String = ProductionStatusTable.TABLE_NAME
