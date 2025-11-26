@@ -1,134 +1,187 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<androidx.cardview.widget.CardView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="10dp"
-    android:gravity="center_vertical"
-    android:background="@color/dark">
+    android:layout_margin="10dp"
+    app:cardCornerRadius="20dp"
+    android:elevation="10dp">
 
-    <!-- Product Name -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="vertical"
+        android:padding="15dp"
+        android:gravity="center_vertical"
+        android:background="@color/dark">
 
-        <TextView
-            android:id="@+id/tv_product_name"
-            android:layout_width="0dp"
-            android:layout_weight="0.5"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Product Name"
-            android:textColor="@color/white"
-            android:textSize="16sp"
-            android:fontFamily="@font/glacial_indifference"/>
+            android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/tv_product_quantity"
-            android:layout_width="0dp"
-            android:layout_weight="0.5"
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.3"
+                android:text="Order ID:"
+                android:textSize="20sp"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                android:fontFamily="@font/intro_rust"/>
+
+            <!-- Order ID -->
+            <TextView
+                android:id="@+id/tv_order_id"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.7"
+                android:text="1"
+                android:textSize="20sp"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                android:fontFamily="@font/intro_rust"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="end"
-            android:text="Product Quantity"
-            android:textColor="@color/white"
-            android:textSize="16sp"
-            android:fontFamily="@font/glacial_indifference"/>
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal">
+
+            <!-- Product Name -->
+            <TextView
+                android:id="@+id/tv_product_name"
+                android:layout_width="0dp"
+                android:layout_weight="0.5"
+                android:layout_height="wrap_content"
+                android:text="Product Name"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:fontFamily="@font/glacial_indifference"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_weight="0.5"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:text="Quantity:"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:fontFamily="@font/glacial_indifference"/>
+
+            <!-- Quantity of Product Ordered -->
+            <TextView
+                android:id="@+id/tv_product_quantity"
+                android:layout_width="0dp"
+                android:layout_weight="0.1"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="0"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:fontFamily="@font/glacial_indifference"
+                android:singleLine="true"/>
+
+        </LinearLayout>
+
+
+        <GridLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:columnCount="2"
+            android:rowCount="2">
+
+            <!-- Cutting -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:text="Cutting"
+                    android:textColor="@color/white"
+                    android:layout_marginEnd="8dp"/>
+                <CheckBox
+                    android:id="@+id/cb_cutting"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"/>
+            </LinearLayout>
+
+            <!-- Stitching -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:text="Stitching"
+                    android:textColor="@color/white"
+                    android:layout_marginEnd="8dp"/>
+                <CheckBox
+                    android:id="@+id/cb_stitching"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    />
+            </LinearLayout>
+
+            <!-- Embroidery -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:text="Embroidery"
+                    android:textColor="@color/white"
+                    android:layout_marginEnd="8dp"/>
+                <CheckBox
+                    android:id="@+id/cb_embroidery"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5" />
+            </LinearLayout>
+
+            <!-- Finishing -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:text="Finishing"
+                    android:textColor="@color/white"
+                    android:layout_marginEnd="8dp"/>
+                <CheckBox
+                    android:id="@+id/cb_finishing"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"/>
+            </LinearLayout>
+
+        </GridLayout>
 
     </LinearLayout>
 
+</androidx.cardview.widget.CardView>
 
-    <GridLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:columnCount="2"
-        android:rowCount="2">
-
-        <!-- Cutting -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_columnWeight="1"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.4"
-                android:text="Cutting"
-                android:textColor="@color/white"
-                android:layout_marginEnd="8dp"/>
-            <CheckBox
-                android:id="@+id/cb_cutting"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.6"/>
-        </LinearLayout>
-
-        <!-- Stitching -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_columnWeight="1"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.4"
-                android:text="Stitching"
-                android:textColor="@color/white"
-                android:layout_marginEnd="8dp"/>
-            <CheckBox
-                android:id="@+id/cb_stitching"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.6"
-                />
-        </LinearLayout>
-
-        <!-- Embroidery -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_columnWeight="1"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.4"
-                android:text="Embroidery"
-                android:textColor="@color/white"
-                android:layout_marginEnd="8dp"/>
-            <CheckBox
-                android:id="@+id/cb_embroidery"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.6" />
-        </LinearLayout>
-
-        <!-- Finishing -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_columnWeight="1"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.4"
-                android:text="Finishing"
-                android:textColor="@color/white"
-                android:layout_marginEnd="8dp"/>
-            <CheckBox
-                android:id="@+id/cb_finishing"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.6"/>
-        </LinearLayout>
-
-    </GridLayout>
-
-</LinearLayout>
