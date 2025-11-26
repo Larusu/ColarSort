@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ColarSort">
         <activity
+            android:name=".activities.ProductionStatusActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.OrdersActivity"
             android:exported="false" />
         <activity
@@ -19,7 +22,7 @@
             android:exported="false" />
         <activity
             android:name=".activities.ProductsActivity"
-            android:exported="false"></activity>
+            android:exported="false" />
         <activity
             android:name=".activities.LoginActivity"
             android:exported="true">

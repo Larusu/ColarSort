@@ -27,6 +27,9 @@ import com.colarsort.app.utils.UtilityHelper.showCustomToast
 import androidx.core.view.isEmpty
 import com.colarsort.app.databinding.OrderRowBinding
 import com.colarsort.app.databinding.OrdersDialogAddProductBinding
+import com.colarsort.app.models.OrderItems
+import com.colarsort.app.models.Orders
+import com.colarsort.app.repository.OrderItemsRepo
 
 class OrdersActivity : BaseActivity() {
 
@@ -34,7 +37,7 @@ class OrdersActivity : BaseActivity() {
     private lateinit var dbHelper: DatabaseHelper
     private lateinit var ordersRepo: OrdersRepo
     private lateinit var productsRepo: ProductsRepo
-
+    private lateinit var orderItemsRepo: OrderItemsRepo
     private lateinit var adapter: ProductAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,6 +48,7 @@ class OrdersActivity : BaseActivity() {
         dbHelper = DatabaseHelper(this)
         ordersRepo = OrdersRepo(dbHelper)
         productsRepo = ProductsRepo(dbHelper)
+        orderItemsRepo = OrderItemsRepo(dbHelper)
 
         // Setup view binding
         binding = ActivityOrdersBinding.inflate(layoutInflater)
@@ -112,9 +116,63 @@ class OrdersActivity : BaseActivity() {
                 .setTitle("Confirm Order")
                 .setMessage("Are you sure you want to confirm the order?")
                 .setPositiveButton("Yes") { _, _ ->
-                    // TODO: Add order to database
-                    binding.layoutMaterialsContainer.removeAllViews()
-                    showCustomToast(this, "Order Confirmed")
+
+                    val container = binding.layoutMaterialsContainer
+                    val customerName = binding.etCustomerName.text.toString().trim()
+
+                    // validation
+                    if (customerName.isEmpty()) {
+                        showCustomToast(this, "Please enter a customer name")
+                        return@setPositiveButton
+                    }
+                    if (container.childCount == 0) {
+                        showCustomToast(this, "Order List is empty")
+                        return@setPositiveButton
+                    }
+
+                    // build order metadata
+                    val productCount = container.childCount
+                    val numberOfDays = productCount * 2
+                    val expectedDelivery = "$numberOfDays days"
+                    val status = "In Production"
+
+                    // Insert a single order and get its id (insertAndReturnId must be implemented)
+                    val order = Orders(id = null, customerName = customerName, status = status, expectedDelivery = expectedDelivery)
+                    val orderIdLong = ordersRepo.insertAndReturnId(order)
+                    if (orderIdLong == -1L) {
+                        showCustomToast(this, "Failed to create order")
+                        return@setPositiveButton
+                    }
+                    val orderId = orderIdLong.toInt()
+
+                    // Loop rows and insert order items using the same orderId
+                    for (i in 0 until container.childCount) {
+                        val row = container.getChildAt(i)
+                        val rowBinding = OrderRowBinding.bind(row)
+
+                        // IMPORTANT: productId must have been stored on the row when added:
+                        // rowBinding.root.tag = product.id
+                        val productId = rowBinding.root.tag as? Int
+                        if (productId == null) {
+                            showCustomToast(this, "Missing product id in row ${i + 1} — skipping")
+                            continue
+                        }
+
+                        val quantity = rowBinding.orderProductQuantity.text.toString().toIntOrNull() ?: 0
+                        if (quantity <= 0) {
+                            showCustomToast(this, "Invalid quantity in row ${i + 1} — skipping")
+                            continue
+                        }
+
+                        val orderItem = OrderItems(id = null, orderId = orderId, productId = productId, quantity = quantity)
+                        orderItemsRepo.insert(orderItem) // or insertAndReturnId if you prefer
+                    }
+
+                    // clear UI
+                    container.removeAllViews()
+                    binding.etCustomerName.setText("")
+                    showCustomToast(this, "Order Created Successfully")
+
                 }
                 .setNegativeButton("No") { dialog, _ -> dialog.dismiss() }
                 .show()
@@ -190,6 +248,7 @@ class OrdersActivity : BaseActivity() {
                         val rowBinding = OrderRowBinding.inflate(layoutInflater, container, false)
                         rowBinding.orderProductName.text = product.name
                         rowBinding.orderProductQuantity.setText("1")
+                        rowBinding.root.tag = product.id
 
                         product.image?.let { bytes ->
                             val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
