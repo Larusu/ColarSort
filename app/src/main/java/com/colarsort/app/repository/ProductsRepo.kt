@@ -36,4 +36,10 @@ class ProductsRepo(dbHelper: DatabaseHelper) : CRUDRepo<Products>(dbHelper)
         db.close()
         return latestId
     }
+
+    fun getById(id: Int): Products? {
+        val list = fetchList("SELECT * FROM $tableName WHERE id = $id")
+        return list.firstOrNull()
+    }
+
 }

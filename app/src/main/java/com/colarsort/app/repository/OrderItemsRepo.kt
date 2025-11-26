@@ -27,4 +27,10 @@ class OrderItemsRepo(dbHelper: DatabaseHelper) : CRUDRepo<OrderItems>(dbHelper)
         // not specified yet
         return super.getAll()
     }
+
+    fun getById(id: Int): OrderItems? {
+        val list = fetchList("SELECT * FROM $tableName WHERE id = $id")
+        return list.firstOrNull()
+    }
+
 }

@@ -23,4 +23,5 @@ class OrdersRepo(dbHelper: DatabaseHelper) : CRUDRepo<Orders>(dbHelper)
             expectedDelivery = cursor.getString(cursor.getColumnIndexOrThrow(OrdersTable.EXPECTED_DELIVERY))
         )
     }
+
 }

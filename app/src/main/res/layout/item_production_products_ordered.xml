@@ -2,9 +2,11 @@
 <androidx.cardview.widget.CardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cv_order_status"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="10dp"
+    app:cardBackgroundColor="@color/dark"
     app:cardCornerRadius="20dp"
     android:elevation="10dp">
 
@@ -13,8 +15,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="15dp"
-        android:gravity="center_vertical"
-        android:background="@color/dark">
+        android:gravity="center_vertical">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -24,7 +25,7 @@
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.3"
+                android:layout_weight="0.4"
                 android:text="Order ID:"
                 android:textSize="20sp"
                 android:textColor="@color/white"
@@ -36,7 +37,7 @@
                 android:id="@+id/tv_order_id"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.7"
+                android:layout_weight="0.6"
                 android:text="1"
                 android:textSize="20sp"
                 android:textColor="@color/white"
