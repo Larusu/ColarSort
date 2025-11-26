@@ -86,7 +86,11 @@ class MaterialsActivity : BaseActivity() {
 
         // Navigation click listeners
         binding.ivHome.setOnClickListener { /* TODO: open home activity */ }
-        binding.ivStatus.setOnClickListener { /* TODO: open status activity */ }
+        binding.ivStatus.setOnClickListener {
+            val intent = Intent(this, ProductionStatusActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
         binding.ivOrders.setOnClickListener {
             val intent = Intent(this, OrdersActivity::class.java)
             startActivity(intent)
