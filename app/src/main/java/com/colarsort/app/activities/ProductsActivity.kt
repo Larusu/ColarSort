@@ -122,6 +122,7 @@ class ProductsActivity : BaseActivity() {
                 when (menuItem.itemId) {
                     R.id.edit_product -> showEditProductDialog(product)
                     R.id.delete_product -> {
+                        productMaterialsRepo.deleteProductById(product.id) // Remove the FK first
                         val successful = productsRepo.deleteColumn(product.id!!)
                         if (!successful) {
                             showCustomToast(this, "Delete failed")
@@ -349,7 +350,41 @@ class ProductsActivity : BaseActivity() {
             it.image?.let { bytes ->
                 dialogBinding.ivProductImage.setImageBitmap(BitmapFactory.decodeByteArray(bytes, 0, bytes.size))
             }
-            addMaterialRow(dialogBinding.layoutMaterialsContainer) // Placeholder for materials
+            val usedMaterials = productMaterialsRepo.getMaterialsPerProduct(product.id!!)
+
+            if (usedMaterials.isEmpty()) {
+                addMaterialRow(dialogBinding.layoutMaterialsContainer)
+            } else {
+                usedMaterials.forEach { pm ->
+
+                    // 1. Add an empty material row (your function)
+                    addMaterialRow(dialogBinding.layoutMaterialsContainer)
+
+                    // 2. Get the last added row
+                    val row = dialogBinding.layoutMaterialsContainer.getChildAt(
+                        dialogBinding.layoutMaterialsContainer.childCount - 1
+                    )
+
+                    // 3. Retrieve binding safely
+                    val rowBinding = (row.tag as? MaterialRowBinding) ?: MaterialRowBinding.bind(row)
+
+                    // --- NOW PREFILL FIELDS ---
+
+                    // Set quantity
+                    rowBinding.etMaterialQuantity.setText(pm.quantityRequired.toString())
+
+                    // Set spinner to correct material
+                    val materials = materialsRepo.getAll()
+                    val index = materials.indexOfFirst { it.id == pm.materialId }
+                    if (index != -1) {
+                        rowBinding.sAvailableMaterials.setSelection(index)
+                    }
+
+                    // Set unit text
+                    rowBinding.tvUnit.text = pm.materialUnit
+                }
+            }
+
         } ?: addMaterialRow(dialogBinding.layoutMaterialsContainer) // Placeholder for new product
 
         // Image picker
@@ -383,6 +418,67 @@ class ProductsActivity : BaseActivity() {
                 if (success) {
                     RecyclerUtils.updateItem(productList, updated, adapter) { it.id }
                     showCustomToast(this, "Product updated successfully")
+                    val productId = product.id!!
+
+                    // 1. OLD materials already in the DB
+                    val oldMaterials = productMaterialsRepo.getMaterialsPerProduct(productId)
+
+                    // 2. NEW materials from the UI
+                    val newMaterials = mutableListOf<ProductMaterials>()
+
+                    for (i in 0 until dialogBinding.layoutMaterialsContainer.childCount) {
+                        val row = dialogBinding.layoutMaterialsContainer.getChildAt(i)
+                        val rowBinding = (row.tag as? MaterialRowBinding) ?: MaterialRowBinding.bind(row)
+
+                        val selectedName = rowBinding.sAvailableMaterials.selectedItem as String
+                        val qtyText = rowBinding.etMaterialQuantity.text.toString().trim()
+                        val qty = qtyText.toDoubleOrNull() ?: 0.0
+
+                        val material = materialsRepo.getAll().first { it.name == selectedName }
+
+                        newMaterials.add(
+                            ProductMaterials(
+                                id = null,
+                                productId = productId,
+                                materialId = material.id,
+                                quantityRequired = qty
+                            )
+                        )
+                    }
+
+                    // 3. Compare
+                    val toInsert = mutableListOf<ProductMaterials>()
+                    val toUpdate = mutableListOf<ProductMaterials>()
+                    val toDelete = mutableListOf<Int>()
+
+                    newMaterials.forEach { newMat ->
+                        val existing = oldMaterials.firstOrNull { it.materialId == newMat.materialId }
+
+                        if (existing == null) {
+                            toInsert.add(newMat)
+                        } else {
+                            toUpdate.add(
+                                ProductMaterials(
+                                    id = existing.productMaterialId,
+                                    productId = productId,
+                                    materialId = existing.materialId,
+                                    quantityRequired = newMat.quantityRequired
+                                )
+                            )
+                        }
+                    }
+
+                    oldMaterials.forEach { oldMat ->
+                        if (newMaterials.none { it.materialId == oldMat.materialId }) {
+                            toDelete.add(oldMat.materialId)
+                        }
+                    }
+
+                    // 4. Apply DB changes
+                    toInsert.forEach { productMaterialsRepo.insert(it) }
+                    toUpdate.forEach { productMaterialsRepo.update(it) }
+                    toDelete.forEach { productMaterialsRepo.deleteColumn(it) }
+
                 } else {
                     showCustomToast(this, "Update failed")
                 }
@@ -400,5 +496,4 @@ class ProductsActivity : BaseActivity() {
 
         dialog.show()
     }
-
 }

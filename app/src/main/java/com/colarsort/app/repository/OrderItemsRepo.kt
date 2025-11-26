@@ -23,7 +23,6 @@ class OrderItemsRepo(dbHelper: DatabaseHelper) : CRUDRepo<OrderItems>(dbHelper)
             quantity = cursor.getInt(cursor.getColumnIndexOrThrow(OrderItemsTable.QUANTITY))
         )
     }
-
     override fun getAll(): List<OrderItems> {
         // not specified yet
         return super.getAll()
