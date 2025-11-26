@@ -14,7 +14,8 @@ data class ProductionStatusDisplay(
     var cuttingStatus: Boolean,
     var stitchingStatus: Boolean,
     var embroideryStatus: Boolean,
-    var finishingStatus: Boolean
+    var finishingStatus: Boolean,
+    var completionHandled: Boolean = false
 )
 
 class ProductionStatusRepo(dbHelper: DatabaseHelper) : CRUDRepo<ProductionStatus>(dbHelper)

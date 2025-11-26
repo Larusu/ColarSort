@@ -12,8 +12,8 @@ import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.databinding.ActivityProductionStatusBinding
 import com.colarsort.app.models.OrderItems
 import com.colarsort.app.models.ProductionStatus
-import com.colarsort.app.models.Products
 import com.colarsort.app.repository.OrderItemsRepo
+import com.colarsort.app.repository.OrdersRepo
 import com.colarsort.app.repository.ProductionStatusDisplay
 import com.colarsort.app.repository.ProductionStatusRepo
 import com.colarsort.app.repository.ProductsRepo
@@ -28,6 +28,7 @@ class ProductionStatusActivity : BaseActivity() {
     private lateinit var productionStatusRepo: ProductionStatusRepo
     private lateinit var orderItemsRepo: OrderItemsRepo
     private lateinit var productsRepo: ProductsRepo
+    private lateinit var ordersRepo: OrdersRepo
     private val productionStatusList = ArrayList<ProductionStatusDisplay>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,6 +40,7 @@ class ProductionStatusActivity : BaseActivity() {
         productionStatusRepo = ProductionStatusRepo(dbHelper)
         orderItemsRepo = OrderItemsRepo(dbHelper)
         productsRepo = ProductsRepo(dbHelper)
+        ordersRepo = OrdersRepo(dbHelper)
 
         // Set up view binding
         binding = ActivityProductionStatusBinding.inflate(layoutInflater)
@@ -66,7 +68,7 @@ class ProductionStatusActivity : BaseActivity() {
         }
 
         // Set up RecyclerView
-        adapter = ProductionStatusAdapter(productionStatusList, productionStatusRepo)
+        adapter = ProductionStatusAdapter(productionStatusList, productionStatusRepo, ordersRepo)
         binding.rvOrdersStatus.layoutManager = LinearLayoutManager(this)
         binding.rvOrdersStatus.adapter = adapter
 
@@ -81,7 +83,7 @@ class ProductionStatusActivity : BaseActivity() {
                 productName = product?.name ?: "Unknown Product",
                 orderId = orderItem.orderId ?: 0,
                 orderItemId = orderItem.id ?: 0,
-                orderItemsQuantity = orderItem.quantity?.toInt() ?: 0,
+                orderItemsQuantity = orderItem.quantity ?: 0,
                 cuttingStatus = status.cuttingStatus == 1,
                 stitchingStatus = status.stitchingStatus == 1,
                 embroideryStatus = status.embroideryStatus == 1,

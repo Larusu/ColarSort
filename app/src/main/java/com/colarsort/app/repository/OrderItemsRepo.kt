@@ -33,4 +33,17 @@ class OrderItemsRepo(dbHelper: DatabaseHelper) : CRUDRepo<OrderItems>(dbHelper)
         return list.firstOrNull()
     }
 
+    fun getLastInsertedId() : Int
+    {
+        val db = dbHelper.writableDatabase
+        var latestId : Int = -1
+        val cursor = db.rawQuery("SELECT MAX(${tableRows[0]}) FROM $tableName", null)
+
+        cursor.use {
+            if(it.moveToFirst()) latestId = it.getLong(0).toInt()
+        }
+
+        db.close()
+        return latestId
+    }
 }

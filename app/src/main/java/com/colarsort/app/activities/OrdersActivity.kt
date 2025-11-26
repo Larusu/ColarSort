@@ -1,16 +1,11 @@
 package com.colarsort.app.activities
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.View
-import android.widget.EditText
-import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.TextView
-import androidx.recyclerview.widget.RecyclerView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
@@ -29,7 +24,9 @@ import com.colarsort.app.databinding.OrderRowBinding
 import com.colarsort.app.databinding.OrdersDialogAddProductBinding
 import com.colarsort.app.models.OrderItems
 import com.colarsort.app.models.Orders
+import com.colarsort.app.models.ProductionStatus
 import com.colarsort.app.repository.OrderItemsRepo
+import com.colarsort.app.repository.ProductionStatusRepo
 
 class OrdersActivity : BaseActivity() {
 
@@ -38,6 +35,7 @@ class OrdersActivity : BaseActivity() {
     private lateinit var ordersRepo: OrdersRepo
     private lateinit var productsRepo: ProductsRepo
     private lateinit var orderItemsRepo: OrderItemsRepo
+    private lateinit var productionStatusRepo: ProductionStatusRepo
     private lateinit var adapter: ProductAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,6 +47,7 @@ class OrdersActivity : BaseActivity() {
         ordersRepo = OrdersRepo(dbHelper)
         productsRepo = ProductsRepo(dbHelper)
         orderItemsRepo = OrderItemsRepo(dbHelper)
+        productionStatusRepo = ProductionStatusRepo(dbHelper)
 
         // Setup view binding
         binding = ActivityOrdersBinding.inflate(layoutInflater)
@@ -169,7 +168,11 @@ class OrdersActivity : BaseActivity() {
                         }
 
                         val orderItem = OrderItems(id = null, orderId = orderId, productId = productId, quantity = quantity)
-                        orderItemsRepo.insert(orderItem) // or insertAndReturnId if you prefer
+                        orderItemsRepo.insert(orderItem)
+
+                        val orderItemId = orderItemsRepo.getLastInsertedId()
+                        val productionStatusModel = ProductionStatus(null, orderItemId, 0, 0, 0, 0)
+                        productionStatusRepo.insert(productionStatusModel)
                     }
 
                     // clear UI
@@ -181,7 +184,6 @@ class OrdersActivity : BaseActivity() {
                 .setNegativeButton("No") { dialog, _ -> dialog.dismiss() }
                 .show()
         }
-
     }
 
     // Popup menu
@@ -283,15 +285,12 @@ class OrdersActivity : BaseActivity() {
                         dialog.dismiss()
                         true
                     }
-
                     R.id.cancel -> true
                     else -> false
                 }
             }
             popup.show()
         }
-
         dialog.show()
     }
-
 }

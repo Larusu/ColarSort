@@ -24,4 +24,26 @@ class OrdersRepo(dbHelper: DatabaseHelper) : CRUDRepo<Orders>(dbHelper)
         )
     }
 
+    fun getRow(id : Int) : Orders?
+    {
+        val db = dbHelper.readableDatabase
+
+        val cursor = db.rawQuery(
+            "SELECT * FROM $tableName WHERE ${OrdersTable.ID} = ?",
+            arrayOf(id.toString())
+        )
+        cursor.use {
+            if(it.moveToNext())
+            {
+                return Orders(
+                    id = it.getInt(it.getColumnIndexOrThrow(OrdersTable.ID)),
+                    customerName = it.getString(it.getColumnIndexOrThrow(OrdersTable.CUSTOMER_NAME)),
+                    status = it.getString(it.getColumnIndexOrThrow(OrdersTable.STATUS)),
+                    expectedDelivery = it.getString(it.getColumnIndexOrThrow(OrdersTable.EXPECTED_DELIVERY))
+                )
+            }
+        }
+
+        return null
+    }
 }
