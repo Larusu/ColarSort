@@ -3,26 +3,33 @@ package com.colarsort.app.activities
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.colarsort.app.R
+import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.databinding.ActivityHomeBinding
+import com.colarsort.app.repository.OrdersRepo
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.components.Legend
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
-import com.github.mikephil.charting.utils.ColorTemplate
 
 class HomeActivity : BaseActivity() {
 
     private lateinit var binding: ActivityHomeBinding
+    private lateinit var dbHelper: DatabaseHelper
+    private lateinit var orderRepo: OrdersRepo
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        dbHelper = DatabaseHelper(this)
+        orderRepo = OrdersRepo(dbHelper)
 
         // Set up view binding
         binding = ActivityHomeBinding.inflate(layoutInflater)
@@ -58,29 +65,67 @@ class HomeActivity : BaseActivity() {
             startActivity(intent)
             finish()
         }
+        showChart()
+    }
+
+    fun showChart()
+    {
+        val orders = orderRepo.getAll()
+        var completed = 0
+        var inProgress = 0
+        var pending = 0
+        for(order in orders)
+        {
+            when(order.status)
+            {
+                "Completed" -> completed += 1
+                "In Progress" -> inProgress += 1
+                "Pending" -> pending += 1
+            }
+        }
 
         val chart = findViewById<PieChart>(R.id.donutChart)
-        val entries = listOf(
-            PieEntry(40f, "Completed"),
-            PieEntry(30f, "In Progress"),
-            PieEntry(30f, "Pending")
-        )
+        if(completed + inProgress + pending == 0)
+        {
+            chart.visibility = View.GONE
+            binding.chartAvailability.visibility = View.VISIBLE
+            return
+        }
+        binding.chartAvailability.visibility = View.GONE
 
-// Dataset
+        val entries = mutableListOf<PieEntry>()
+        val colors = mutableListOf<Int>()
+
+        if (completed > 0) {
+            entries.add(PieEntry(completed.toFloat(), "Completed"))
+            colors.add(Color.GREEN)
+        }
+
+        if (inProgress > 0) {
+            entries.add(PieEntry(inProgress.toFloat(), "In Progress"))
+            colors.add(Color.YELLOW)
+        }
+
+        if (pending > 0) {
+            entries.add(PieEntry(pending.toFloat(), "Pending"))
+            colors.add(Color.RED)
+        }
+
+        // Dataset
         val dataSet = PieDataSet(entries, "")
         dataSet.setDrawValues(true)
         dataSet.sliceSpace = 2f
-        dataSet.colors = ColorTemplate.MATERIAL_COLORS.toList()
+        dataSet.colors = colors
 
-// Data
+        // Data
         val data = PieData(dataSet)
         data.setValueTextSize(14f)           // values size
         data.setValueTextColor(Color.BLACK)  // values color
 
-// Apply data
+        // Apply data
         chart.data = data
 
-// Style
+        // Style
         chart.setUsePercentValues(true)
         chart.isDrawHoleEnabled = true
         chart.holeRadius = 60f
@@ -88,18 +133,17 @@ class HomeActivity : BaseActivity() {
         chart.setCenterText("Orders")
         chart.description.isEnabled = false
 
-// Labels on slices
+        // Labels on slices
         chart.setEntryLabelColor(Color.BLACK)   // label color
         chart.setEntryLabelTextSize(12f)      // label size
 
-// Legend (optional)
+        // Legend (optional)
         val legend = chart.legend
         chart.legend.isEnabled = true
         chart.legend.textColor = Color.BLUE
         legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER)
 
-// Refresh
+        // Refresh
         chart.invalidate()
-
     }
 }
