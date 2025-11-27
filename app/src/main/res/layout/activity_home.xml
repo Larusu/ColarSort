@@ -189,18 +189,37 @@
             app:layout_constraintVertical_bias="0.1"
             app:layout_constraintHorizontal_bias="0.15">
 
-            <com.github.mikephil.charting.charts.PieChart
-                android:id="@+id/donutChart"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="300dp"
-                android:layout_margin="20dp"
-                android:layout_gravity="center"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/total_production_progress_card"
-                app:layout_constraintVertical_bias="0.1"
-                app:layout_constraintHorizontal_bias="0.1"/>
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                >
+                <TextView
+                    android:id="@+id/chartAvailability"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="No chart data available."
+                    android:gravity="center"
+                    android:textColor="@color/black"
+                    android:fontFamily="@font/glacial_indifference"
+                    android:textSize="18sp"
+                    android:visibility="visible"
+                    />
+
+                <com.github.mikephil.charting.charts.PieChart
+                    android:id="@+id/donutChart"
+                    android:layout_width="match_parent"
+                    android:layout_height="300dp"
+                    android:layout_margin="20dp"
+                    android:layout_gravity="center"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/total_production_progress_card"
+                    app:layout_constraintVertical_bias="0.1"
+                    app:layout_constraintHorizontal_bias="0.1"/>
+            </LinearLayout>
+
 
         </androidx.cardview.widget.CardView>
 
