@@ -9,6 +9,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.colarsort.app.R
 import com.colarsort.app.models.Materials
 import android.widget.ImageView
+import androidx.cardview.widget.CardView
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.graphics.toColorInt
 
 
 class MaterialAdapter(private val materials: ArrayList<Materials>) : RecyclerView.Adapter<MaterialAdapter.ViewHolder>() {
@@ -21,7 +24,6 @@ class MaterialAdapter(private val materials: ArrayList<Materials>) : RecyclerVie
         val materialName: TextView = itemView.findViewById(R.id.tv_material_name)
         val materialUnit: TextView = itemView.findViewById(R.id.tv_material_unit)
         val materialQuantity: TextView = itemView.findViewById(R.id.tv_material_quantity)
-
         val itemMore: ImageView = itemView.findViewById(R.id.iv_more)
 
         fun bind(material: Materials) {
@@ -35,6 +37,12 @@ class MaterialAdapter(private val materials: ArrayList<Materials>) : RecyclerVie
             materialName.text = material.name
             materialUnit.text = material.unit
             materialQuantity.text = material.quantity.toString()
+
+            val lowStock = material.quantity!! <= material.stockThreshold!!
+
+            if (lowStock) {
+                itemView.findViewById<CardView>(R.id.material_card).setCardBackgroundColor("#9a0002".toColorInt())
+            }
 
             itemMore.setOnClickListener {
                 onItemMoreClickListener?.invoke(material, it)
