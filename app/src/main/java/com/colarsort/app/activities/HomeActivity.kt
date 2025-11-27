@@ -11,6 +11,8 @@ import com.colarsort.app.R
 import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.databinding.ActivityHomeBinding
 import com.colarsort.app.repository.OrdersRepo
+import com.colarsort.app.repository.ProductionStatusRepo
+import com.colarsort.app.repository.ProductsRepo
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.components.Legend
@@ -23,13 +25,18 @@ class HomeActivity : BaseActivity() {
     private lateinit var binding: ActivityHomeBinding
     private lateinit var dbHelper: DatabaseHelper
     private lateinit var orderRepo: OrdersRepo
+    private lateinit var productsRepo: ProductsRepo
+    private lateinit var productionStatusRepo: ProductionStatusRepo
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // Initialize database and repositories
         dbHelper = DatabaseHelper(this)
         orderRepo = OrdersRepo(dbHelper)
+        productsRepo = ProductsRepo(dbHelper)
+        productionStatusRepo = ProductionStatusRepo(dbHelper)
 
         // Set up view binding
         binding = ActivityHomeBinding.inflate(layoutInflater)
@@ -41,6 +48,20 @@ class HomeActivity : BaseActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+        // Get total products and orders
+        val totalProducts = productsRepo.getAll().size
+        val totalOrders = orderRepo.getAll().size
+
+        // Set total products and orders
+        binding.tvTotalProducts.text = totalProducts.toString()
+        binding.tvTotalOrders.text = totalOrders.toString()
+
+        // Set Progress Bar and Pie chart
+        val progressValue = calculateProductionProgress()
+        binding.progressBar.progress = progressValue
+        binding.tvProgressValue.text = ("$progressValue%")
+        showChart()
 
         // Navigation click listeners
         binding.ivHome.setOnClickListener {
@@ -65,7 +86,7 @@ class HomeActivity : BaseActivity() {
             startActivity(intent)
             finish()
         }
-        showChart()
+
     }
 
     fun showChart()
@@ -146,4 +167,22 @@ class HomeActivity : BaseActivity() {
         // Refresh
         chart.invalidate()
     }
+
+    private fun calculateProductionProgress(): Int {
+        val statuses = productionStatusRepo.getAll()
+        if (statuses.isEmpty()) return 0
+
+        var completed = 0
+        val totalStages = statuses.size * 4
+
+        statuses.forEach { s ->
+            if (s.cuttingStatus == 1) completed++
+            if (s.stitchingStatus == 1) completed++
+            if (s.embroideryStatus == 1) completed++
+            if (s.finishingStatus == 1) completed++
+        }
+
+        return ((completed * 100) / totalStages)
+    }
+
 }
