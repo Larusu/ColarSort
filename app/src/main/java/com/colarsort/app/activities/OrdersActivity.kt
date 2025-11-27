@@ -40,7 +40,6 @@ class OrdersActivity : BaseActivity() {
     private lateinit var productsRepo: ProductsRepo
     private lateinit var orderItemsRepo: OrderItemsRepo
     private lateinit var productionStatusRepo: ProductionStatusRepo
-    private lateinit var adapter: ProductAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -318,7 +317,8 @@ class OrdersActivity : BaseActivity() {
         // Quantity buttons
         rowBinding.quantityAdd.setOnClickListener {
             val currentQty = rowBinding.orderProductQuantity.text.toString().toIntOrNull() ?: 0
-            rowBinding.orderProductQuantity.setText((currentQty + 1).toString())
+            val text = currentQty + 1
+            rowBinding.orderProductQuantity.setText((text).toString())
         }
         rowBinding.quantityMinus.setOnClickListener {
             val currentQty = rowBinding.orderProductQuantity.text.toString().toIntOrNull() ?: 0

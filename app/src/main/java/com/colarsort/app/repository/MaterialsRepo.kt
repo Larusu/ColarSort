@@ -4,7 +4,6 @@ import android.database.Cursor
 import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.database.MaterialsTable
 import com.colarsort.app.database.ProductMaterialTable
-import com.colarsort.app.database.ProductionStatusTable
 import com.colarsort.app.models.Materials
 
 class MaterialsRepo(dbHelper: DatabaseHelper) : CRUDRepo<Materials>(dbHelper)
