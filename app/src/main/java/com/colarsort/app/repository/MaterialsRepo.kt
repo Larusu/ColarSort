@@ -59,4 +59,57 @@ class MaterialsRepo(dbHelper: DatabaseHelper) : CRUDRepo<Materials>(dbHelper)
             arrayOf(quantity, productId, productId)
         )
     }
+
+    fun checkMaterialQuantity(quantity: Int, productId : Int) : List<String>
+    {
+        val db = dbHelper.readableDatabase
+        val query =
+            """
+            SELECT
+                m.${MaterialsTable.NAME} AS m_name
+            FROM
+                ${ProductMaterialTable.TABLE_NAME} AS pm
+            JOIN
+                ${MaterialsTable.TABLE_NAME} AS m
+                ON ${ProductMaterialTable.MATERIAL_ID} = m.${MaterialsTable.ID}
+            WHERE
+                 pm.${ProductMaterialTable.PRODUCT_ID} = ?
+            AND 
+                m.${MaterialsTable.QUANTITY} < (pm.${ProductMaterialTable.QUANTITY_REQUIRED} * ?);
+            """.trimIndent()
+
+        val cursor = db.rawQuery(
+            query,
+            arrayOf(productId.toString(), quantity.toString())
+        )
+
+        val insufficientList = mutableListOf<String>()
+
+        while (cursor.moveToNext())
+        {
+            val matName = cursor.getString(cursor.getColumnIndexOrThrow("m_name"))
+            insufficientList.add(matName)
+        }
+
+        db.close()
+        cursor.close()
+
+        return insufficientList
+    }
+
+    fun searchMaterialBaseOnName(searchName : String) : List<Materials>
+    {
+        val db = dbHelper.readableDatabase
+        val newList = mutableListOf<Materials>()
+
+        val cursor = db.rawQuery(
+            "SELECT * FROM $tableName WHERE ${MaterialsTable.NAME} LIKE ?",
+            arrayOf("%$searchName%")
+        )
+        cursor.use {
+            while(it.moveToNext()) { newList.add(converter(it)) }
+        }
+
+        return newList
+    }
 }

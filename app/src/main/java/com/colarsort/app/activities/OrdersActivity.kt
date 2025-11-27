@@ -209,7 +209,7 @@ class OrdersActivity : BaseActivity() {
             showCustomToast(this, "Please enter a customer name")
             return
         }
-        if (container.childCount == 0) {
+        if (container.isEmpty()) {
             showCustomToast(this, "Order List is empty")
             return
         }
@@ -233,7 +233,7 @@ class OrdersActivity : BaseActivity() {
                 continue
             }
 
-            val insufficientMaterials = productsRepo.checkMaterialQuantity(quantity = quantity, productId = productId)
+            val insufficientMaterials = materialRepo.checkMaterialQuantity(quantity = quantity, productId = productId)
 
             if (insufficientMaterials.isNotEmpty()) {
                 val message = insufficientMaterials.joinToString("\n") { "• $it" }

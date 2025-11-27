@@ -3,6 +3,8 @@ package com.colarsort.app.activities
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.ImageDecoder
+import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.View
@@ -149,6 +151,20 @@ class ProductsActivity : BaseActivity() {
             }
             popup.show()
         }
+
+        // For searching product
+        binding.ivSearch.setOnClickListener {
+            val strSearch = binding.etSearchField.text.toString().trim()
+
+            val newList = if (strSearch.isEmpty()) {
+                productsRepo.getAll()
+            } else {
+                productsRepo.searchProductBaseOnName(strSearch)
+            }
+            adapter = ProductAdapter(ArrayList(newList))
+            binding.recyclerViewProducts.layoutManager = GridLayoutManager(this, 3)
+            binding.recyclerViewProducts.adapter = adapter
+        }
     }
 
     // Handle image picker result
@@ -156,7 +172,14 @@ class ProductsActivity : BaseActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == 1001 && resultCode == RESULT_OK) {
             val uri = data?.data ?: return
-            val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
+
+            val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                val source = ImageDecoder.createSource(contentResolver, uri)
+                ImageDecoder.decodeBitmap(source)
+            } else {
+                @Suppress("DEPRECATION")
+                MediaStore.Images.Media.getBitmap(contentResolver, uri)
+            }
             tempDialogImageView?.setImageBitmap(bitmap) // Show in dialog
             selectedImageBytes = compressBitmap(bitmap) // Compress and store
         }
@@ -383,7 +406,7 @@ class ProductsActivity : BaseActivity() {
 
                     // Set spinner to correct material
                     val materials = materialsRepo.getAll()
-                    val index = materials.indexOfFirst { it.id == pm.materialId }
+                    val index = materials.indexOfFirst { it -> it.id == pm.materialId }
                     if (index != -1) {
                         rowBinding.sAvailableMaterials.setSelection(index)
                     }

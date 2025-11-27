@@ -3,13 +3,13 @@ package com.colarsort.app.activities
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.ImageDecoder
+import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import android.widget.AutoCompleteTextView
-import android.widget.EditText
 import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.TextView
@@ -132,6 +132,21 @@ class MaterialsActivity : BaseActivity() {
             }
             popup.show()
         }
+
+        // For searching materials
+        binding.ivSearch.setOnClickListener {
+            val strSearch = binding.etSearchField.text.toString().trim()
+
+            val newList = if (strSearch.isEmpty()) {
+                materialsRepo.getAll()
+            } else {
+                materialsRepo.searchMaterialBaseOnName(strSearch)
+            }
+
+            adapter = MaterialAdapter(ArrayList(newList))
+            binding.recyclerViewMaterials.layoutManager = LinearLayoutManager(this)
+            binding.recyclerViewMaterials.adapter = adapter
+        }
     }
 
     // Handle image picker result
@@ -139,7 +154,14 @@ class MaterialsActivity : BaseActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == 1001 && resultCode == RESULT_OK) {
             val uri = data?.data ?: return
-            val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
+
+            val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                val source = ImageDecoder.createSource(contentResolver, uri)
+                ImageDecoder.decodeBitmap(source)
+            } else {
+                @Suppress("DEPRECATION")
+                MediaStore.Images.Media.getBitmap(contentResolver, uri)
+            }
             tempDialogImageView?.setImageBitmap(bitmap)
             selectedImageBytes = compressBitmap(bitmap)
         }
