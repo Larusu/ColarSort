@@ -50,9 +50,6 @@ class HomeActivity : BaseActivity() {
         val totalProducts = productsRepo.getAll().size
         val totalOrders = ordersRepo.getAll().size
 
-        // Set the total values in the UI
-        binding.tvTotalProducts.text = totalProducts.toString()
-        binding.tvTotalOrders.text = totalOrders.toString()
 
 
         // Navigation click listeners
