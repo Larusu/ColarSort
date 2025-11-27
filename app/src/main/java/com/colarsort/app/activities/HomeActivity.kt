@@ -1,6 +1,7 @@
 package com.colarsort.app.activities
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
@@ -8,6 +9,11 @@ import androidx.core.view.WindowInsetsCompat
 import com.colarsort.app.R
 import com.colarsort.app.databinding.ActivityHomeBinding
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
+import com.github.mikephil.charting.charts.PieChart
+import com.github.mikephil.charting.data.PieData
+import com.github.mikephil.charting.data.PieDataSet
+import com.github.mikephil.charting.data.PieEntry
+import com.github.mikephil.charting.utils.ColorTemplate
 
 class HomeActivity : BaseActivity() {
 
@@ -51,5 +57,36 @@ class HomeActivity : BaseActivity() {
             startActivity(intent)
             finish()
         }
+
+        val chart = findViewById<PieChart>(R.id.donutChart)
+        val entries = listOf(
+            PieEntry(40f, "Completed"),
+            PieEntry(30f, "In Progress"),
+            PieEntry(30f, "Pending")
+        )
+        // 2. Create dataset
+        val dataSet = PieDataSet(entries, "")
+        dataSet.setDrawValues(true)          // show percentages
+        dataSet.sliceSpace = 2f              // space between slices
+        dataSet.colors = ColorTemplate.MATERIAL_COLORS.toList()
+
+        val data = PieData(dataSet)
+        data.setValueTextSize(14f)
+        data.setValueTextColor(Color.WHITE)
+
+        // 4. Apply to chart
+        chart.data = data
+
+        // 5. Style
+        chart.setUsePercentValues(true)
+        chart.isDrawHoleEnabled = true
+        chart.holeRadius = 60f
+        chart.transparentCircleRadius = 65f
+        chart.setCenterText("Status")
+        chart.description.isEnabled = false
+        chart.legend.isEnabled = false
+
+        // 6. Refresh
+        chart.invalidate()
     }
 }
