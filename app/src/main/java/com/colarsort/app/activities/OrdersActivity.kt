@@ -1,9 +1,11 @@
 package com.colarsort.app.activities
 
+import android.app.Dialog
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.View
+import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
@@ -25,8 +27,10 @@ import com.colarsort.app.databinding.OrdersDialogAddProductBinding
 import com.colarsort.app.models.OrderItems
 import com.colarsort.app.models.Orders
 import com.colarsort.app.models.ProductionStatus
+import com.colarsort.app.repository.MaterialsRepo
 import com.colarsort.app.repository.OrderItemsRepo
 import com.colarsort.app.repository.ProductionStatusRepo
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class OrdersActivity : BaseActivity() {
 
@@ -123,67 +127,7 @@ class OrdersActivity : BaseActivity() {
                 .setTitle("Confirm Order")
                 .setMessage("Are you sure you want to confirm the order?")
                 .setPositiveButton("Yes") { _, _ ->
-
-                    val container = binding.layoutMaterialsContainer
-                    val customerName = binding.etCustomerName.text.toString().trim()
-
-                    // validation
-                    if (customerName.isEmpty()) {
-                        showCustomToast(this, "Please enter a customer name")
-                        return@setPositiveButton
-                    }
-                    if (container.childCount == 0) {
-                        showCustomToast(this, "Order List is empty")
-                        return@setPositiveButton
-                    }
-
-                    // build order metadata
-                    val productCount = container.childCount
-                    val numberOfDays = productCount * 2
-                    val expectedDelivery = "$numberOfDays days"
-                    val status = "Pending"
-
-                    // Insert a single order and get its id (insertAndReturnId must be implemented)
-                    val order = Orders(id = null, customerName = customerName, status = status, expectedDelivery = expectedDelivery)
-                    val orderIdLong = ordersRepo.insertAndReturnId(order)
-                    if (orderIdLong == -1L) {
-                        showCustomToast(this, "Failed to create order")
-                        return@setPositiveButton
-                    }
-                    val orderId = orderIdLong.toInt()
-
-                    // Loop rows and insert order items using the same orderId
-                    for (i in 0 until container.childCount) {
-                        val row = container.getChildAt(i)
-                        val rowBinding = OrderRowBinding.bind(row)
-
-                        // IMPORTANT: productId must have been stored on the row when added:
-                        // rowBinding.root.tag = product.id
-                        val productId = rowBinding.root.tag as? Int
-                        if (productId == null) {
-                            showCustomToast(this, "Missing product id in row ${i + 1} — skipping")
-                            continue
-                        }
-
-                        val quantity = rowBinding.orderProductQuantity.text.toString().toIntOrNull() ?: 0
-                        if (quantity <= 0) {
-                            showCustomToast(this, "Invalid quantity in row ${i + 1} — skipping")
-                            continue
-                        }
-
-                        val orderItem = OrderItems(id = null, orderId = orderId, productId = productId, quantity = quantity)
-                        orderItemsRepo.insert(orderItem)
-
-                        val orderItemId = orderItemsRepo.getLastInsertedId()
-                        val productionStatusModel = ProductionStatus(null, orderItemId, 0, 0, 0, 0)
-                        productionStatusRepo.insert(productionStatusModel)
-                    }
-
-                    // clear UI
-                    container.removeAllViews()
-                    binding.etCustomerName.setText("")
-                    showCustomToast(this, "Order Created Successfully")
-
+                    saveButton()
                 }
                 .setNegativeButton("No") { dialog, _ -> dialog.dismiss() }
                 .show()
@@ -244,49 +188,7 @@ class OrdersActivity : BaseActivity() {
             popup.setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
                     R.id.add_product -> {
-                        // Check if product is already added
-                        for (i in 0 until container.childCount) {
-                            val row = container.getChildAt(i)
-                            val tvProductName = row.findViewById<TextView>(R.id.order_product_name)
-                            if (tvProductName.text == product.name) {
-                                showCustomToast(this, "Product is already on the List")
-                                return@setOnMenuItemClickListener true
-                            }
-                        }
-
-                        // Inflate row using binding
-                        val rowBinding = OrderRowBinding.inflate(layoutInflater, container, false)
-                        rowBinding.orderProductName.text = product.name
-                        rowBinding.orderProductQuantity.setText("1")
-                        rowBinding.root.tag = product.id
-
-                        product.image?.let { bytes ->
-                            val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                            rowBinding.orderProductImage.setImageBitmap(bitmap)
-                        }
-
-                        // Quantity buttons
-                        rowBinding.quantityAdd.setOnClickListener {
-                            val currentQty = rowBinding.orderProductQuantity.text.toString().toIntOrNull() ?: 0
-                            rowBinding.orderProductQuantity.setText((currentQty + 1).toString())
-                        }
-                        rowBinding.quantityMinus.setOnClickListener {
-                            val currentQty = rowBinding.orderProductQuantity.text.toString().toIntOrNull() ?: 0
-                            if (currentQty > 1) rowBinding.orderProductQuantity.setText((currentQty - 1).toString())
-                        }
-
-                        // Remove row
-                        rowBinding.btnRemoveRow.setOnClickListener {
-                            container.removeView(rowBinding.root)
-                            showCustomToast(this, "Product removed from the List")
-                        }
-
-                        // Add row to container
-                        container.addView(rowBinding.root)
-                        showCustomToast(this, "Product added to List")
-
-                        // Dismiss dialog
-                        dialog.dismiss()
+                        addProductToOrderList(product, container, dialog)
                         true
                     }
                     R.id.cancel -> true
@@ -296,5 +198,144 @@ class OrdersActivity : BaseActivity() {
             popup.show()
         }
         dialog.show()
+    }
+
+    private fun saveButton()
+    {
+        val container = binding.layoutMaterialsContainer
+        val customerName = binding.etCustomerName.text.toString().trim()
+
+        // validation
+        if (customerName.isEmpty()) {
+            showCustomToast(this, "Please enter a customer name")
+            return
+        }
+        if (container.childCount == 0) {
+            showCustomToast(this, "Order List is empty")
+            return
+        }
+
+        val materialRepo = MaterialsRepo(dbHelper)
+
+        for (i in 0 until container.childCount)
+        {
+            val row = container.getChildAt(i)
+            val rowBinding = OrderRowBinding.bind(row)
+
+            val productId = rowBinding.root.tag as? Int
+            if (productId == null) {
+                showCustomToast(this, "Missing product id in row ${i + 1} — skipping")
+                continue
+            }
+
+            val quantity = rowBinding.orderProductQuantity.text.toString().toIntOrNull() ?: 0
+            if (quantity <= 0) {
+                showCustomToast(this, "Invalid quantity in row ${i + 1} — skipping")
+                continue
+            }
+
+            val insufficientMaterials = productsRepo.checkMaterialQuantity(quantity = quantity, productId = productId)
+
+            if (insufficientMaterials.isNotEmpty()) {
+                val message = insufficientMaterials.joinToString("\n") { "• $it" }
+
+                MaterialAlertDialogBuilder(this)
+                    .setTitle("Insufficient Materials")
+                    .setMessage("The following materials are not enough:\n\n$message")
+                    .setPositiveButton("OK", null)
+                    .show()
+                return
+            }
+        }
+        // build order metadata
+        val productCount = container.childCount
+        val numberOfDays = productCount * 2
+        val expectedDelivery = "$numberOfDays days"
+        val status = "Pending"
+
+        // Insert a single order and get its id
+        val order = Orders(
+            id = null,
+            customerName = customerName,
+            status = status,
+            expectedDelivery = expectedDelivery
+        )
+
+        val orderIdLong = ordersRepo.insertAndReturnId(order)
+        if (orderIdLong == -1L) {
+            showCustomToast(this, "Failed to create order")
+            return
+        }
+
+        val orderId = orderIdLong.toInt()
+
+        // Loop rows and insert order items using the same orderId
+        for (i in 0 until container.childCount) {
+            val row = container.getChildAt(i)
+            val rowBinding = OrderRowBinding.bind(row)
+            val productId = rowBinding.root.tag as? Int
+            val quantity = rowBinding.orderProductQuantity.text.toString().toIntOrNull() ?: 0
+
+            materialRepo.setQuantity(quantity, productId!!)
+
+            val orderItem = OrderItems(id = null, orderId = orderId, productId = productId, quantity = quantity)
+            orderItemsRepo.insert(orderItem)
+
+            val orderItemId = orderItemsRepo.getLastInsertedId()
+            val productionStatusModel = ProductionStatus(null, orderItemId, 0, 0, 0, 0)
+            productionStatusRepo.insert(productionStatusModel)
+        }
+
+        // clear UI
+        container.removeAllViews()
+        binding.etCustomerName.setText("")
+        showCustomToast(this, "Order Created Successfully")
+    }
+
+    private fun addProductToOrderList(product: Products, container: LinearLayout, dialog: Dialog)
+    {
+        // Check if product is already added
+        for (i in 0 until container.childCount) {
+            val row = container.getChildAt(i)
+            val tvProductName = row.findViewById<TextView>(R.id.order_product_name)
+            if (tvProductName.text == product.name) {
+                showCustomToast(this, "Product is already on the List")
+                return
+            }
+        }
+
+        // Inflate row using binding
+        val rowBinding = OrderRowBinding.inflate(layoutInflater, container, false)
+        rowBinding.orderProductName.text = product.name
+        rowBinding.orderProductQuantity.setText("1")
+        rowBinding.root.tag = product.id
+
+        product.image?.let { bytes ->
+            val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            rowBinding.orderProductImage.setImageBitmap(bitmap)
+        }
+
+        // Quantity buttons
+        rowBinding.quantityAdd.setOnClickListener {
+            val currentQty = rowBinding.orderProductQuantity.text.toString().toIntOrNull() ?: 0
+            rowBinding.orderProductQuantity.setText((currentQty + 1).toString())
+        }
+        rowBinding.quantityMinus.setOnClickListener {
+            val currentQty = rowBinding.orderProductQuantity.text.toString().toIntOrNull() ?: 0
+            if (currentQty > 1) rowBinding.orderProductQuantity.setText((currentQty - 1).toString())
+        }
+
+        // Remove row
+        rowBinding.btnRemoveRow.setOnClickListener {
+            container.removeView(rowBinding.root)
+            showCustomToast(this, "Product removed from the List")
+        }
+
+        // Add row to container
+        container.addView(rowBinding.root)
+        showCustomToast(this, "Product added to List")
+
+        // Dismiss dialog
+        dialog.dismiss()
     }
 }
