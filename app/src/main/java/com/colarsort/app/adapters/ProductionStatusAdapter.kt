@@ -19,7 +19,7 @@ class ProductionStatusAdapter(
     private val productionStatusRepo: ProductionStatusRepo,
     private val ordersRepo: OrdersRepo
 ) : RecyclerView.Adapter<ProductionStatusAdapter.ViewHolder>() {
-
+    var onDataChanged: (() -> Unit)? = null
     inner class ViewHolder(val binding: ItemProductionProductsOrderedBinding) :
         RecyclerView.ViewHolder(binding.root)
 
@@ -92,6 +92,15 @@ class ProductionStatusAdapter(
                 stitchingStatus = if (item.stitchingStatus) 1 else 0,
                 embroideryStatus = if (item.embroideryStatus) 1 else 0,
                 finishingStatus = if (item.finishingStatus) 1 else 0
+            )
+        )
+
+        ordersRepo.update(
+            Orders(
+                id = item.orderId,
+                customerName = null,
+                status = "In Progress",
+                expectedDelivery = null
             )
         )
     }
@@ -197,10 +206,12 @@ class ProductionStatusAdapter(
         val removed = items.removeAll(itemsSameOrder)
         if (removed) {
             notifyDataSetChanged()
+            onDataChanged?.invoke()
         } else {
             // fallback: try to remove individually
             itemsSameOrder.forEach { items.remove(it) }
             notifyDataSetChanged()
+            onDataChanged?.invoke()
         }
 
         // Optional: show a toast

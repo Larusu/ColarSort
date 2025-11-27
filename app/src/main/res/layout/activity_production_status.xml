@@ -8,7 +8,7 @@
     android:background="@color/primaryColor">
 
     <ImageView
-        android:id="@+id/order_menu"
+        android:id="@+id/production_status_menu"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_marginStart="15dp"
@@ -31,7 +31,7 @@
         android:textSize="40sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.2"
-        app:layout_constraintStart_toEndOf="@+id/order_menu"
+        app:layout_constraintStart_toEndOf="@+id/production_status_menu"
         app:layout_constraintTop_toTopOf="parent" />
 
     <LinearLayout
@@ -45,6 +45,20 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/textView2">
+
+        <TextView
+            android:id="@+id/tvEmpty"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:padding="16dp"
+            android:text="No orders yet"
+            android:textSize="18sp"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:fontFamily="@font/glacial_indifference"
+            android:visibility="gone"/>
+
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_orders_status"

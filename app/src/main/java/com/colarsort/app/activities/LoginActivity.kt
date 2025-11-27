@@ -82,7 +82,7 @@ class LoginActivity : BaseActivity() {
 
         if (userExists) {
             showCustomToast(this, "Logged in successfully")
-            val intent = Intent(this, ProductsActivity::class.java)
+            val intent = Intent(this, HomeActivity::class.java)
             startActivity(intent)
             finish()
         } else {

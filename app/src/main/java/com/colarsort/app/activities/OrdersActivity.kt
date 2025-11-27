@@ -61,7 +61,11 @@ class OrdersActivity : BaseActivity() {
         }
 
         // Navigation click listeners
-        binding.ivHome.setOnClickListener { /* TODO: open home activity */ }
+        binding.ivHome.setOnClickListener {
+            val intent = Intent(this, HomeActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
         binding.ivStatus.setOnClickListener {
             val intent = Intent(this, ProductionStatusActivity::class.java)
             startActivity(intent)
@@ -137,7 +141,7 @@ class OrdersActivity : BaseActivity() {
                     val productCount = container.childCount
                     val numberOfDays = productCount * 2
                     val expectedDelivery = "$numberOfDays days"
-                    val status = "In Production"
+                    val status = "Pending"
 
                     // Insert a single order and get its id (insertAndReturnId must be implemented)
                     val order = Orders(id = null, customerName = customerName, status = status, expectedDelivery = expectedDelivery)

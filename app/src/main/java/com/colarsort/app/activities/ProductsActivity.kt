@@ -96,7 +96,11 @@ class ProductsActivity : BaseActivity() {
         adapter.notifyItemRangeInserted(existingSize, newItems.size)
 
         // Navigation click listeners
-        binding.ivHome.setOnClickListener { /* TODO: open home activity */ }
+        binding.ivHome.setOnClickListener {
+            val intent = Intent(this, HomeActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
         binding.ivStatus.setOnClickListener {
             val intent = Intent(this, ProductionStatusActivity::class.java)
             startActivity(intent)

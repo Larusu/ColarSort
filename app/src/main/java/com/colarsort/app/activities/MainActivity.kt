@@ -2,13 +2,12 @@ package com.colarsort.app.activities
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.colarsort.app.R
 import com.colarsort.app.database.DatabaseHelper
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity() {
 
     private lateinit var dbHelper: DatabaseHelper
 

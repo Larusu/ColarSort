@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ColarSort">
         <activity
+            android:name=".activities.HomeActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.ProductionStatusActivity"
             android:exported="false" />
         <activity

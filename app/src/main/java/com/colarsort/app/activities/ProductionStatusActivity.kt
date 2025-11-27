@@ -2,7 +2,10 @@ package com.colarsort.app.activities
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
+import android.widget.PopupMenu
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -53,20 +56,6 @@ class ProductionStatusActivity : BaseActivity() {
             insets
         }
 
-        // Temporary Creation
-        val existing = productionStatusRepo.getAll()
-        if (existing.isEmpty()) {
-            // Insert sample order items
-            orderItemsRepo.insert(OrderItems(1, 1, 1, 10)) // T-Shirt x10
-            orderItemsRepo.insert(OrderItems(2, 1, 2, 5))  // Hoodie x5
-            orderItemsRepo.insert(OrderItems(3, 2, 3, 8))  // Polo x8
-
-            // Insert production status
-            productionStatusRepo.insert(ProductionStatus(1, 1, 0, 1, 0, 0))
-            productionStatusRepo.insert(ProductionStatus(2, 2, 1, 1, 1, 0))
-            productionStatusRepo.insert(ProductionStatus(3, 3, 0, 0, 0, 1))
-        }
-
         // Set up RecyclerView
         adapter = ProductionStatusAdapter(productionStatusList, productionStatusRepo, ordersRepo)
         binding.rvOrdersStatus.layoutManager = LinearLayoutManager(this)
@@ -93,9 +82,15 @@ class ProductionStatusActivity : BaseActivity() {
 
         // Load into the adapter using RecyclerUtils
         RecyclerUtils.initialize(productionStatusList, displayItems, adapter)
+        updateEmptyView()
+
 
         // Navigation click listeners
-        binding.ivHome.setOnClickListener { /* TODO: open home activity */ }
+        binding.ivHome.setOnClickListener {
+            val intent = Intent(this, HomeActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
         binding.ivStatus.setOnClickListener {
             showCustomToast(this, "You are already in Production Status")
         }
@@ -114,6 +109,47 @@ class ProductionStatusActivity : BaseActivity() {
             startActivity(intent)
             finish()
         }
+
+        binding.productionStatusMenu.setOnClickListener { view -> showPopupMenu(view) }
+
     }
 
+    private fun updateEmptyView() {
+        if (productionStatusList.isEmpty()) {
+            binding.tvEmpty.visibility = View.VISIBLE
+            binding.rvOrdersStatus.visibility = View.GONE
+        } else {
+            binding.tvEmpty.visibility = View.GONE
+            binding.rvOrdersStatus.visibility = View.VISIBLE
+        }
+    }
+
+    // Popup menu
+    private fun showPopupMenu(view: View) {
+        val popup = PopupMenu(this, view)
+        popup.menuInflater.inflate(R.menu.hamburger_menu, popup.menu)
+        popup.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.log_out -> showLogoutDialog()
+                else -> false
+            }
+            true
+        }
+        popup.show()
+    }
+
+    // Logout dialog
+    private fun showLogoutDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Log Out")
+            .setMessage("Are you sure you want to log out?")
+            .setPositiveButton("Yes") { dialog, _ ->
+                dialog.dismiss()
+                startActivity(Intent(this, LoginActivity::class.java))
+                showCustomToast(this, "Logged out successfully")
+                finish()
+            }
+            .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+            .show()
+    }
 }
