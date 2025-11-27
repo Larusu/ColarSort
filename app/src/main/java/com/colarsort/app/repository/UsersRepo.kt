@@ -9,30 +9,38 @@ import com.colarsort.app.utils.UtilityHelper.hashPassword
 class UsersRepo(private val dbHelper: DatabaseHelper)
 {
     /**
-     * Returns true if the user exists on the existing accounts
+     * Returns userId if the user exists on the existing accounts
      *
      * @param username username of the user performing action
      * @param password password of the user performing action
      */
-    fun validateCredentials(username: String, password: String): Boolean
+    fun getIdAndRoleIfExists(username: String, password: String): Pair<Int, String>
     {
         val db = dbHelper.writableDatabase
+        var userId = 0
+        var role = ""
 
         val cursor = db.query(
             UserTable.TABLE_NAME,
-            null,
+            arrayOf(UserTable.ID, UserTable.ROLE),
             "${UserTable.USERNAME} = ? AND ${UserTable.PASSWORD} = ?",
             arrayOf(username, hashPassword(password)),
             null,
             null,
             null
         )
-        val exists = cursor.count > 0
+        cursor.use {
+            if(it.moveToNext())
+            {
+                userId = it.getInt(it.getColumnIndexOrThrow(UserTable.ID))
+                role = it.getString(it.getColumnIndexOrThrow(UserTable.ROLE))
+            }
+        }
 
 //        cursor.close()
 //        db.close()
 
-        return exists
+        return userId to role
     }
 
     /**

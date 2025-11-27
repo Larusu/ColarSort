@@ -8,7 +8,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.colarsort.app.R
-import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.databinding.ActivityHomeBinding
 import com.colarsort.app.repository.OrdersRepo
 import com.colarsort.app.repository.ProductionStatusRepo
@@ -23,7 +22,6 @@ import com.github.mikephil.charting.data.PieEntry
 class HomeActivity : BaseActivity() {
 
     private lateinit var binding: ActivityHomeBinding
-    private lateinit var dbHelper: DatabaseHelper
     private lateinit var orderRepo: OrdersRepo
     private lateinit var productsRepo: ProductsRepo
     private lateinit var productionStatusRepo: ProductionStatusRepo
@@ -32,8 +30,6 @@ class HomeActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Initialize database and repositories
-        dbHelper = DatabaseHelper(this)
         orderRepo = OrdersRepo(dbHelper)
         productsRepo = ProductsRepo(dbHelper)
         productionStatusRepo = ProductionStatusRepo(dbHelper)
@@ -60,7 +56,8 @@ class HomeActivity : BaseActivity() {
         // Set Progress Bar and Pie chart
         val progressValue = calculateProductionProgress()
         binding.progressBar.progress = progressValue
-        binding.tvProgressValue.text = ("$progressValue%")
+        val progressValueStr = "$progressValue%"
+        binding.tvProgressValue.text = (progressValueStr)
         showChart()
 
         // Navigation click listeners
@@ -86,7 +83,7 @@ class HomeActivity : BaseActivity() {
             startActivity(intent)
             finish()
         }
-
+        binding.homeMenu.setOnClickListener { view -> showPopupMenu(view)}
     }
 
     fun showChart()
@@ -106,12 +103,14 @@ class HomeActivity : BaseActivity() {
         }
 
         val chart = findViewById<PieChart>(R.id.donutChart)
+
         if(completed + inProgress + pending == 0)
         {
             chart.visibility = View.GONE
             binding.chartAvailability.visibility = View.VISIBLE
             return
         }
+
         binding.chartAvailability.visibility = View.GONE
 
         val entries = mutableListOf<PieEntry>()
@@ -140,10 +139,9 @@ class HomeActivity : BaseActivity() {
 
         // Data
         val data = PieData(dataSet)
-        data.setValueTextSize(14f)           // values size
-        data.setValueTextColor(Color.BLACK)  // values color
+        data.setValueTextSize(14f)
+        data.setValueTextColor(Color.BLACK)
 
-        // Apply data
         chart.data = data
 
         // Style
@@ -151,20 +149,19 @@ class HomeActivity : BaseActivity() {
         chart.isDrawHoleEnabled = true
         chart.holeRadius = 60f
         chart.transparentCircleRadius = 65f
-        chart.setCenterText("Orders")
+        chart.centerText = "Orders"
         chart.description.isEnabled = false
 
         // Labels on slices
-        chart.setEntryLabelColor(Color.BLACK)   // label color
-        chart.setEntryLabelTextSize(12f)      // label size
+        chart.setEntryLabelColor(Color.BLACK)
+        chart.setEntryLabelTextSize(12f)
 
-        // Legend (optional)
+        // Legend
         val legend = chart.legend
         chart.legend.isEnabled = true
         chart.legend.textColor = Color.BLUE
-        legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER)
+        legend.horizontalAlignment = Legend.LegendHorizontalAlignment.CENTER
 
-        // Refresh
         chart.invalidate()
     }
 

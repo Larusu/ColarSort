@@ -7,7 +7,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.colarsort.app.R
-import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.databinding.ActivityLoginBinding
 import com.colarsort.app.repository.UsersRepo
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
@@ -15,14 +14,11 @@ import com.colarsort.app.utils.UtilityHelper.showCustomToast
 class LoginActivity : BaseActivity() {
 
     private lateinit var binding: ActivityLoginBinding
-    private lateinit var dbHelper: DatabaseHelper
     private var isPasswordVisible = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
-        dbHelper = DatabaseHelper(this)
 
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -78,9 +74,10 @@ class LoginActivity : BaseActivity() {
         }
 
         val userRepo = UsersRepo(dbHelper)
-        val userExists = userRepo.validateCredentials(username, password)
+        val (userId, userRole) = userRepo.getIdAndRoleIfExists(username, password)
 
-        if (userExists) {
+        if (userId > 0) {
+            sessionManager.saveUser(userId, userRole)
             showCustomToast(this, "Logged in successfully")
             val intent = Intent(this, HomeActivity::class.java)
             startActivity(intent)
@@ -89,5 +86,4 @@ class LoginActivity : BaseActivity() {
             showCustomToast(this, "User not found")
         }
     }
-
 }

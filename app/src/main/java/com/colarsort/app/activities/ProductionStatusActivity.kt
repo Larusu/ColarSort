@@ -3,18 +3,13 @@ package com.colarsort.app.activities
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import android.widget.PopupMenu
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.colarsort.app.R
 import com.colarsort.app.adapters.ProductionStatusAdapter
-import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.databinding.ActivityProductionStatusBinding
-import com.colarsort.app.models.OrderItems
-import com.colarsort.app.models.ProductionStatus
 import com.colarsort.app.repository.OrderItemsRepo
 import com.colarsort.app.repository.OrdersRepo
 import com.colarsort.app.repository.ProductionStatusDisplay
@@ -26,7 +21,6 @@ import com.colarsort.app.utils.UtilityHelper.showCustomToast
 class ProductionStatusActivity : BaseActivity() {
 
     private lateinit var binding: ActivityProductionStatusBinding
-    private lateinit var dbHelper: DatabaseHelper
     private lateinit var adapter: ProductionStatusAdapter
     private lateinit var productionStatusRepo: ProductionStatusRepo
     private lateinit var orderItemsRepo: OrderItemsRepo
@@ -38,8 +32,6 @@ class ProductionStatusActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Initialize database and repository
-        dbHelper = DatabaseHelper(this)
         productionStatusRepo = ProductionStatusRepo(dbHelper)
         orderItemsRepo = OrderItemsRepo(dbHelper)
         productsRepo = ProductsRepo(dbHelper)
@@ -122,34 +114,5 @@ class ProductionStatusActivity : BaseActivity() {
             binding.tvEmpty.visibility = View.GONE
             binding.rvOrdersStatus.visibility = View.VISIBLE
         }
-    }
-
-    // Popup menu
-    private fun showPopupMenu(view: View) {
-        val popup = PopupMenu(this, view)
-        popup.menuInflater.inflate(R.menu.hamburger_menu, popup.menu)
-        popup.setOnMenuItemClickListener { menuItem ->
-            when (menuItem.itemId) {
-                R.id.log_out -> showLogoutDialog()
-                else -> false
-            }
-            true
-        }
-        popup.show()
-    }
-
-    // Logout dialog
-    private fun showLogoutDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("Log Out")
-            .setMessage("Are you sure you want to log out?")
-            .setPositiveButton("Yes") { dialog, _ ->
-                dialog.dismiss()
-                startActivity(Intent(this, LoginActivity::class.java))
-                showCustomToast(this, "Logged out successfully")
-                finish()
-            }
-            .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
-            .show()
     }
 }

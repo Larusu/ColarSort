@@ -21,7 +21,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.colarsort.app.R
 import com.colarsort.app.adapters.MaterialAdapter
-import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.databinding.ActivityMaterialsBinding
 import com.colarsort.app.databinding.DialogAddMaterialBinding
 import com.colarsort.app.models.Materials
@@ -35,7 +34,6 @@ import com.colarsort.app.utils.UtilityHelper.showCustomToast
 class MaterialsActivity : BaseActivity() {
 
     private lateinit var binding: ActivityMaterialsBinding
-    private lateinit var dbHelper: DatabaseHelper
     private lateinit var materialsRepo: MaterialsRepo
     private lateinit var adapter: MaterialAdapter
     private val materialList = ArrayList<Materials>()
@@ -46,8 +44,6 @@ class MaterialsActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Initialize database and repository
-        dbHelper = DatabaseHelper(this)
         materialsRepo = MaterialsRepo(dbHelper)
 
         // Setup view binding
@@ -165,35 +161,6 @@ class MaterialsActivity : BaseActivity() {
             tempDialogImageView?.setImageBitmap(bitmap)
             selectedImageBytes = compressBitmap(bitmap)
         }
-    }
-
-    // Popup menu
-    private fun showPopupMenu(view: View) {
-        val popup = PopupMenu(this, view)
-        popup.menuInflater.inflate(R.menu.hamburger_menu, popup.menu)
-        popup.setOnMenuItemClickListener { menuItem ->
-            when (menuItem.itemId) {
-                R.id.log_out -> showLogoutDialog()
-                else -> false
-            }
-            true
-        }
-        popup.show()
-    }
-
-    // Logout dialog
-    private fun showLogoutDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("Log Out")
-            .setMessage("Are you sure you want to log out?")
-            .setPositiveButton("Yes") { dialog, _ ->
-                dialog.dismiss()
-                startActivity(Intent(this, LoginActivity::class.java))
-                showCustomToast(this, "Logged out successfully")
-                finish()
-            }
-            .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
-            .show()
     }
 
     // Show add material dialog
