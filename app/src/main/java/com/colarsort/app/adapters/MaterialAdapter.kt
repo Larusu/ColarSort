@@ -42,6 +42,8 @@ class MaterialAdapter(private val materials: ArrayList<Materials>) : RecyclerVie
 
             if (lowStock) {
                 itemView.findViewById<CardView>(R.id.material_card).setCardBackgroundColor("#9a0002".toColorInt())
+            } else {
+                itemView.findViewById<CardView>(R.id.material_card).setCardBackgroundColor("#241d1d".toColorInt())
             }
 
             itemMore.setOnClickListener {

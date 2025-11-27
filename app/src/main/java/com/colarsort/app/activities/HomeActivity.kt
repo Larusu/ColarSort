@@ -7,7 +7,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.colarsort.app.R
+import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.databinding.ActivityHomeBinding
+import com.colarsort.app.repository.OrdersRepo
+import com.colarsort.app.repository.ProductsRepo
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.components.Legend
@@ -19,6 +22,9 @@ import com.github.mikephil.charting.utils.ColorTemplate
 class HomeActivity : BaseActivity() {
 
     private lateinit var binding: ActivityHomeBinding
+    private lateinit var dbHelper: DatabaseHelper
+    private lateinit var ordersRepo: OrdersRepo
+    private lateinit var productsRepo: ProductsRepo
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,12 +34,26 @@ class HomeActivity : BaseActivity() {
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Set up database and repositories
+        dbHelper = DatabaseHelper(this)
+        ordersRepo = OrdersRepo(dbHelper)
+        productsRepo = ProductsRepo(dbHelper)
+
         // Apply system window insets
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+        // Get total number of products and orders
+        val totalProducts = productsRepo.getAll().size
+        val totalOrders = ordersRepo.getAll().size
+
+        // Set the total values in the UI
+        binding.tvTotalProducts.text = totalProducts.toString()
+        binding.tvTotalOrders.text = totalOrders.toString()
+
 
         // Navigation click listeners
         binding.ivHome.setOnClickListener {
@@ -59,6 +79,7 @@ class HomeActivity : BaseActivity() {
             finish()
         }
 
+        // Pie Chart
         val chart = findViewById<PieChart>(R.id.donutChart)
         val entries = listOf(
             PieEntry(40f, "Completed"),
@@ -66,21 +87,21 @@ class HomeActivity : BaseActivity() {
             PieEntry(30f, "Pending")
         )
 
-// Dataset
+        // Dataset
         val dataSet = PieDataSet(entries, "")
         dataSet.setDrawValues(true)
         dataSet.sliceSpace = 2f
         dataSet.colors = ColorTemplate.MATERIAL_COLORS.toList()
 
-// Data
+        // Data
         val data = PieData(dataSet)
         data.setValueTextSize(14f)           // values size
         data.setValueTextColor(Color.BLACK)  // values color
 
-// Apply data
+        // Apply data
         chart.data = data
 
-// Style
+        // Style
         chart.setUsePercentValues(true)
         chart.isDrawHoleEnabled = true
         chart.holeRadius = 60f
@@ -88,17 +109,17 @@ class HomeActivity : BaseActivity() {
         chart.setCenterText("Orders")
         chart.description.isEnabled = false
 
-// Labels on slices
+        // Labels on slices
         chart.setEntryLabelColor(Color.BLACK)   // label color
         chart.setEntryLabelTextSize(12f)      // label size
 
-// Legend (optional)
+        // Legend (optional)
         val legend = chart.legend
         chart.legend.isEnabled = true
         chart.legend.textColor = Color.BLUE
         legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER)
 
-// Refresh
+        // Refresh
         chart.invalidate()
 
     }
