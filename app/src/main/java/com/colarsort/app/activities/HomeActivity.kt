@@ -10,6 +10,7 @@ import com.colarsort.app.R
 import com.colarsort.app.databinding.ActivityHomeBinding
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
 import com.github.mikephil.charting.charts.PieChart
+import com.github.mikephil.charting.components.Legend
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
@@ -64,29 +65,41 @@ class HomeActivity : BaseActivity() {
             PieEntry(30f, "In Progress"),
             PieEntry(30f, "Pending")
         )
-        // 2. Create dataset
+
+// Dataset
         val dataSet = PieDataSet(entries, "")
-        dataSet.setDrawValues(true)          // show percentages
-        dataSet.sliceSpace = 2f              // space between slices
+        dataSet.setDrawValues(true)
+        dataSet.sliceSpace = 2f
         dataSet.colors = ColorTemplate.MATERIAL_COLORS.toList()
 
+// Data
         val data = PieData(dataSet)
-        data.setValueTextSize(14f)
-        data.setValueTextColor(Color.WHITE)
+        data.setValueTextSize(14f)           // values size
+        data.setValueTextColor(Color.BLACK)  // values color
 
-        // 4. Apply to chart
+// Apply data
         chart.data = data
 
-        // 5. Style
+// Style
         chart.setUsePercentValues(true)
         chart.isDrawHoleEnabled = true
         chart.holeRadius = 60f
         chart.transparentCircleRadius = 65f
         chart.setCenterText("Status")
         chart.description.isEnabled = false
-        chart.legend.isEnabled = false
 
-        // 6. Refresh
+// Labels on slices
+        chart.setEntryLabelColor(Color.BLACK)   // label color
+        chart.setEntryLabelTextSize(12f)      // label size
+
+// Legend (optional)
+        val legend = chart.legend
+        chart.legend.isEnabled = true
+        chart.legend.textColor = Color.BLUE
+        legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER)
+
+// Refresh
         chart.invalidate()
+
     }
 }

@@ -174,16 +174,33 @@
 
         </androidx.cardview.widget.CardView>
 
-        <com.github.mikephil.charting.charts.PieChart
-            android:id="@+id/donutChart"
-            android:layout_width="0dp"
+        <androidx.cardview.widget.CardView
+            android:layout_width="300dp"
             android:layout_height="300dp"
-            app:layout_constraintTop_toBottomOf="@id/total_production_progress_card"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
+            android:padding="20dp"
+            app:cardCornerRadius="10dp"
+            app:cardElevation="10dp"
+            app:cardBackgroundColor="@color/white"
             app:layout_constraintBottom_toBottomOf="parent"
-            />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/total_production_progress_card"
+            app:layout_constraintVertical_bias="0.1"
+            app:layout_constraintHorizontal_bias="0.1">
 
+            <com.github.mikephil.charting.charts.PieChart
+                android:id="@+id/donutChart"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_margin="20dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/total_production_progress_card"
+                app:layout_constraintVertical_bias="0.1"
+                app:layout_constraintHorizontal_bias="0.1"/>
+
+        </androidx.cardview.widget.CardView>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
