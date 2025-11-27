@@ -100,6 +100,18 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                     SELECT 1 FROM ${UserTable.TABLE_NAME} 
                     WHERE ${UserTable.USERNAME} = 'admin' 
                  );
+            """.trimIndent(),
+            """
+                INSERT INTO ${UserTable.TABLE_NAME} (
+                     ${UserTable.USERNAME},
+                     ${UserTable.ROLE},
+                     ${UserTable.PASSWORD}
+                 )
+                 SELECT 'a', 'Manager', '${hashPassword("a")}'
+                 WHERE NOT EXISTS (
+                    SELECT 1 FROM ${UserTable.TABLE_NAME} 
+                    WHERE ${UserTable.USERNAME} = 'admin' 
+                 );
             """.trimIndent()
         )
 

@@ -175,8 +175,9 @@
         </androidx.cardview.widget.CardView>
 
         <androidx.cardview.widget.CardView
-            android:layout_width="300dp"
-            android:layout_height="300dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="15dp"
             android:padding="20dp"
             app:cardCornerRadius="10dp"
             app:cardElevation="10dp"
@@ -186,13 +187,14 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/total_production_progress_card"
             app:layout_constraintVertical_bias="0.1"
-            app:layout_constraintHorizontal_bias="0.1">
+            app:layout_constraintHorizontal_bias="0.15">
 
             <com.github.mikephil.charting.charts.PieChart
                 android:id="@+id/donutChart"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="300dp"
                 android:layout_margin="20dp"
+                android:layout_gravity="center"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"

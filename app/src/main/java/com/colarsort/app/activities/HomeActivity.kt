@@ -85,7 +85,7 @@ class HomeActivity : BaseActivity() {
         chart.isDrawHoleEnabled = true
         chart.holeRadius = 60f
         chart.transparentCircleRadius = 65f
-        chart.setCenterText("Status")
+        chart.setCenterText("Orders")
         chart.description.isEnabled = false
 
 // Labels on slices
