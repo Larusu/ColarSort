@@ -1,5 +1,6 @@
 package com.colarsort.app.activities
 
+import android.app.Dialog
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -149,23 +150,24 @@ class MaterialsActivity : BaseActivity() {
     }
 
     private fun handleProductMenuClick(material: Materials, menuItemId: Int): Boolean {
-        when (menuItemId) {
-            R.id.edit_product -> {
-                showEditMaterialDialog(material)
-            }
 
-            R.id.delete_product -> {
-                productMaterialsRepo.deleteProductById(material.id)
+        if(menuItemId == R.id.edit_product)
+        {
+            showEditMaterialDialog(material)
+        }
 
-                val successful = materialsRepo.deleteColumn(material.id!!)
-                if (!successful) {
-                    showCustomToast(this, "Delete failed")
-                    return false
-                }
-                val position = materialList.indexOf(material)
-                RecyclerUtils.deleteAt(materialList, position, adapter)
-                showCustomToast(this, "Material deleted successfully")
+        if(menuItemId == R.id.delete_product)
+        {
+            productMaterialsRepo.deleteProductById(material.id)
+
+            val successful = materialsRepo.deleteColumn(material.id!!)
+            if (!successful) {
+                showCustomToast(this, "Delete failed")
+                return false
             }
+            val position = materialList.indexOf(material)
+            RecyclerUtils.deleteAt(materialList, position, adapter)
+            showCustomToast(this, "Material deleted successfully")
         }
         return true
     }
@@ -284,50 +286,7 @@ class MaterialsActivity : BaseActivity() {
 
         // Save button
         dialogBinding.tvSave.setOnClickListener {
-            val name: String? = dialogBinding.etMaterialName.text.toString().trim().ifEmpty { null }
-            val quantity: Double? = dialogBinding.etMaterialQuantity.text.toString().toDoubleOrNull()?.takeIf { it != 0.0 }
-            val unit: String? = dialogBinding.spMaterialUnit.selectedItem.toString().takeIf { it.isNotEmpty() }
-            val threshold: Double? = dialogBinding.etLowStockThreshold.text.toString().toDoubleOrNull()?.takeIf { it != 0.0 }
-
-            when {
-                name == null -> {
-                    showCustomToast(this, "Invalid name. Please fill in the field.")
-                    return@setOnClickListener
-                }
-                quantity == null -> {
-                    showCustomToast(this, "Invalid quantity. Please fill in the field.")
-                    return@setOnClickListener
-                }
-                unit == null -> {
-                    showCustomToast(this, "Invalid unit. Please select a unit.")
-                    return@setOnClickListener
-                }
-                threshold == null -> {
-                    showCustomToast(this, "Invalid threshold. Please fill in the field.")
-                    return@setOnClickListener
-                }
-                else -> {
-                    val materialData = Materials(
-                        material!!.id,
-                        name,
-                        quantity,
-                        unit,
-                        threshold,
-                        selectedImageBytes ?: material.image
-                    )
-                    val success = materialsRepo.update(materialData)
-
-                    tempDialogImageView = null
-                    dialog.dismiss()
-
-                    if (success) {
-                        RecyclerUtils.updateItem(materialList, materialData, adapter) { it.id }
-                        showCustomToast(this, "Material updated successfully")
-                    } else {
-                        showCustomToast(this, "Update failed")
-                    }
-                }
-            }
+            handleEditSaveButton(material, dialogBinding, dialog)
         }
 
         // Cancel button
@@ -339,5 +298,50 @@ class MaterialsActivity : BaseActivity() {
         dialog.show()
     }
 
+    private fun handleEditSaveButton(material: Materials?, dialogBinding: DialogAddMaterialBinding, dialog: Dialog)
+    {
+        val name: String? = dialogBinding.etMaterialName.text.toString().trim().ifEmpty { null }
+        val quantity: Double? = dialogBinding.etMaterialQuantity.text.toString().toDoubleOrNull()?.takeIf { it != 0.0 }
+        val unit: String? = dialogBinding.spMaterialUnit.selectedItem.toString().takeIf { it.isNotEmpty() }
+        val threshold: Double? = dialogBinding.etLowStockThreshold.text.toString().toDoubleOrNull()?.takeIf { it != 0.0 }
 
+        when {
+            name == null -> {
+                showCustomToast(this, "Invalid name. Please fill in the field.")
+                return
+            }
+            quantity == null -> {
+                showCustomToast(this, "Invalid quantity. Please fill in the field.")
+                return
+            }
+            unit == null -> {
+                showCustomToast(this, "Invalid unit. Please select a unit.")
+                return
+            }
+            threshold == null -> {
+                showCustomToast(this, "Invalid threshold. Please fill in the field.")
+                return
+            }
+        }
+
+        val materialData = Materials(
+            material!!.id,
+            name,
+            quantity,
+            unit,
+            threshold,
+            selectedImageBytes ?: material.image
+        )
+        val success = materialsRepo.update(materialData)
+
+        tempDialogImageView = null
+        dialog.dismiss()
+
+        if (success) {
+            RecyclerUtils.updateItem(materialList, materialData, adapter) { it.id }
+            showCustomToast(this, "Material updated successfully")
+        } else {
+            showCustomToast(this, "Update failed")
+        }
+    }
 }

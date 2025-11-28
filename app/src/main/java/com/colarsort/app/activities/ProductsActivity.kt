@@ -162,24 +162,24 @@ class ProductsActivity : BaseActivity() {
     }
 
     private fun handleProductMenuClick(product: Products, menuItemId: Int): Boolean {
-        when (menuItemId) {
-            R.id.edit_product -> {
-                showEditProductDialog(product)
-            }
 
-            R.id.delete_product -> {
-                productMaterialsRepo.deleteProductById(product.id)
-
-                val successful = productsRepo.deleteColumn(product.id!!)
-                if (!successful) {
-                    showCustomToast(this, "Delete failed")
-                    return false
-                }
-                val position = productList.indexOf(product)
-                RecyclerUtils.deleteAt(productList, position, adapter)
-                showCustomToast(this, "Material deleted successfully")
-            }
+        if(menuItemId == R.id.edit_product){
+            showEditProductDialog(product)
         }
+
+        if(menuItemId == R.id.delete_product) {
+            productMaterialsRepo.deleteProductById(product.id)
+
+            val successful = productsRepo.deleteColumn(product.id!!)
+            if (!successful) {
+                showCustomToast(this, "Delete failed")
+                return false
+            }
+            val position = productList.indexOf(product)
+            RecyclerUtils.deleteAt(productList, position, adapter)
+            showCustomToast(this, "Material deleted successfully")
+        }
+
         return true
     }
 
@@ -469,7 +469,13 @@ class ProductsActivity : BaseActivity() {
             val rowBinding = (row.tag as? MaterialRowBinding) ?: MaterialRowBinding.bind(row)
 
             val selectedName = rowBinding.sAvailableMaterials.selectedItem as String
-            val qty = rowBinding.etMaterialQuantity.text.toString().trim().toDoubleOrNull() ?: 0.0
+            val qtyText = rowBinding.etMaterialQuantity.text.toString().trim()
+
+            if (qtyText.isEmpty()) return
+
+            val qty = qtyText.toDoubleOrNull()
+
+            if (qty == null || qty <= 0) return
 
             val material = materialsRepo.getAll().first { it.name == selectedName }
 
