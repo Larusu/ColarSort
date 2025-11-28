@@ -27,7 +27,6 @@ import com.colarsort.app.models.Materials
 import com.colarsort.app.repository.MaterialsRepo
 import com.colarsort.app.repository.ProductMaterialsRepo
 import com.colarsort.app.utils.UtilityHelper.compressBitmap
-import com.colarsort.app.utils.UtilityHelper.inputStreamToByteArray
 import com.colarsort.app.utils.RecyclerUtils
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
 
@@ -58,22 +57,6 @@ class MaterialsActivity : BaseActivity() {
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
-        }
-
-        // Temporary material creation
-        val existing = materialsRepo.getAll()
-        if (existing.size < 4) {
-            val material = arrayOf(
-                Materials(null, "Cotton", 100.0, "m", 10.0, inputStreamToByteArray(this, "materials/cotton_fabric.jpg")),
-                Materials(null, "Canvas", 200.0, "m", 15.0, inputStreamToByteArray(this, "materials/canvas_fabric.jpg")),
-                Materials(null, "Polyester", 150.0, "m", 12.0, inputStreamToByteArray(this, "materials/polyester_fabric.jpg")),
-                Materials(null, "Thread Roll", 20.0, "roll", 5.0, inputStreamToByteArray(this, "materials/thread_roll.jpg")),
-                Materials(null, "Button", 300.0, "pcs", 20.0, inputStreamToByteArray(this, "materials/button.jpg")),
-                Materials(null, "Zipper", 100.0, "pcs", 20.0, inputStreamToByteArray(this, "materials/zipper.jpg")),
-                Materials(null, "Elastic Band", 80.0, "m", 5.0, inputStreamToByteArray(this, "materials/elastic_band.jpg")),
-                Materials(null, "Velcro Strip", 120.0, "m", 10.0, inputStreamToByteArray(this, "materials/velcro_strip.jpg"))
-            )
-            material.forEach { m -> materialsRepo.insert(m) }
         }
 
         // Setup RecyclerView

@@ -33,7 +33,6 @@ import com.colarsort.app.repository.ProductMaterialsRepo
 import com.colarsort.app.repository.ProductsRepo
 import com.colarsort.app.utils.RecyclerUtils
 import com.colarsort.app.utils.UtilityHelper.compressBitmap
-import com.colarsort.app.utils.UtilityHelper.inputStreamToByteArray
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
 
 class ProductsActivity : BaseActivity() {
@@ -64,23 +63,6 @@ class ProductsActivity : BaseActivity() {
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
-        }
-
-        // Temporary product creation
-        val existing = productsRepo.getAll()
-        if (existing.size < 4) {
-            val product = arrayOf(
-                Products(null, "T-shirt", inputStreamToByteArray(this, "products/tshirt.png")),
-                Products(null, "Jeans", inputStreamToByteArray(this, "products/jeans.png")),
-                Products(null, "Sweater", inputStreamToByteArray(this, "products/sweater.png")),
-                Products(null, "Dress", inputStreamToByteArray(this, "products/dress.png")),
-                Products(null, "Shoes", inputStreamToByteArray(this, "products/shoes.png")),
-                Products(null, "Hat", inputStreamToByteArray(this, "products/hat.png")),
-                Products(null, "Jacket", inputStreamToByteArray(this, "products/jacket.png")),
-                Products(null, "Gloves", inputStreamToByteArray(this, "products/gloves.png")),
-                Products(null, "Scarf", inputStreamToByteArray(this, "products/scarf.jpg"))
-            )
-            product.forEach { p -> productsRepo.insert(p) }
         }
 
         // Setup RecyclerView
