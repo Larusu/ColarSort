@@ -107,10 +107,10 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                      ${UserTable.ROLE},
                      ${UserTable.PASSWORD}
                  )
-                 SELECT 'a', 'Manager', '${hashPassword("a")}'
+                 SELECT 'user', 'Worker', '${hashPassword("user")}'
                  WHERE NOT EXISTS (
                     SELECT 1 FROM ${UserTable.TABLE_NAME} 
-                    WHERE ${UserTable.USERNAME} = 'admin' 
+                    WHERE ${UserTable.USERNAME} = 'user' 
                  );
             """.trimIndent()
         )

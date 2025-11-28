@@ -10,13 +10,17 @@ import com.colarsort.app.R
 import com.colarsort.app.models.Materials
 import android.widget.ImageView
 import androidx.cardview.widget.CardView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.graphics.toColorInt
 
 
-class MaterialAdapter(private val materials: ArrayList<Materials>) : RecyclerView.Adapter<MaterialAdapter.ViewHolder>() {
+class MaterialAdapter(private val materials: ArrayList<Materials>,
+                      private var userRole: String = "Worker"
+) : RecyclerView.Adapter<MaterialAdapter.ViewHolder>() {
 
     var onItemMoreClickListener: ((Materials, View) -> Unit)? = null
+
+    fun setUserRole(role: String) { userRole = role }
+
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         val materialImg: ImageView = itemView.findViewById(R.id.iv_material_image)
@@ -46,10 +50,14 @@ class MaterialAdapter(private val materials: ArrayList<Materials>) : RecyclerVie
                 itemView.findViewById<CardView>(R.id.material_card).setCardBackgroundColor("#241d1d".toColorInt())
             }
 
-            itemMore.setOnClickListener {
-                onItemMoreClickListener?.invoke(material, it)
+            if (userRole == "Worker") {
+                itemMore.visibility = View.GONE
+            } else {
+                itemMore.visibility = View.VISIBLE
+                itemMore.setOnClickListener {
+                    onItemMoreClickListener?.invoke(material, it)
+                }
             }
-
         }
     }
 

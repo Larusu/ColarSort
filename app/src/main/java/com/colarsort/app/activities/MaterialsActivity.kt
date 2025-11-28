@@ -25,6 +25,7 @@ import com.colarsort.app.databinding.ActivityMaterialsBinding
 import com.colarsort.app.databinding.DialogAddMaterialBinding
 import com.colarsort.app.models.Materials
 import com.colarsort.app.repository.MaterialsRepo
+import com.colarsort.app.repository.ProductMaterialsRepo
 import com.colarsort.app.utils.UtilityHelper.compressBitmap
 import com.colarsort.app.utils.UtilityHelper.inputStreamToByteArray
 import com.colarsort.app.utils.RecyclerUtils
@@ -35,6 +36,7 @@ class MaterialsActivity : BaseActivity() {
 
     private lateinit var binding: ActivityMaterialsBinding
     private lateinit var materialsRepo: MaterialsRepo
+    private lateinit var productMaterialsRepo: ProductMaterialsRepo
     private lateinit var adapter: MaterialAdapter
     private val materialList = ArrayList<Materials>()
     private var tempDialogImageView: ImageView? = null
@@ -45,6 +47,7 @@ class MaterialsActivity : BaseActivity() {
         enableEdgeToEdge()
 
         materialsRepo = MaterialsRepo(dbHelper)
+        productMaterialsRepo = ProductMaterialsRepo(dbHelper)
 
         // Setup view binding
         binding = ActivityMaterialsBinding.inflate(layoutInflater)
@@ -103,31 +106,8 @@ class MaterialsActivity : BaseActivity() {
         binding.ivMaterials.setOnClickListener {
             showCustomToast(this, "You are already in Materials")
         }
-
+        // Menu button
         binding.materialsMenu.setOnClickListener { view -> showPopupMenu(view) }
-
-        binding.btnAddMaterial.setOnClickListener { showAddMaterialDialog() }
-
-        // Adapter item "more" click listener
-        adapter.onItemMoreClickListener = { material: Materials, view: View ->
-            val popup = PopupMenu(this, view)
-            popup.menuInflater.inflate(R.menu.more_menu, popup.menu)
-            popup.setOnMenuItemClickListener { menuItem ->
-                when (menuItem.itemId) {
-                    R.id.edit_product -> showEditMaterialDialog(material)
-                    R.id.delete_product -> {
-                        val successful = materialsRepo.deleteColumn(material.id!!)
-                        if (!successful) showCustomToast(this, "Delete failed")
-
-                        val position = materialList.indexOf(material)
-                        RecyclerUtils.deleteAt(materialList, position, adapter)
-                        showCustomToast(this, "Material deleted successfully")
-                    }
-                }
-                true
-            }
-            popup.show()
-        }
 
         // For searching materials
         binding.ivSearch.setOnClickListener {
@@ -142,6 +122,12 @@ class MaterialsActivity : BaseActivity() {
             adapter = MaterialAdapter(ArrayList(newList))
             binding.recyclerViewMaterials.layoutManager = LinearLayoutManager(this)
             binding.recyclerViewMaterials.adapter = adapter
+        }
+
+        when(sessionManager.getRole())
+        {
+            "Worker" -> binding.btnAddMaterial.visibility = View.GONE
+            "Manager" -> handleManagerSession()
         }
     }
 
@@ -161,6 +147,44 @@ class MaterialsActivity : BaseActivity() {
             tempDialogImageView?.setImageBitmap(bitmap)
             selectedImageBytes = compressBitmap(bitmap)
         }
+    }
+
+    private fun handleManagerSession()
+    {
+        binding.btnAddMaterial.setOnClickListener { showAddMaterialDialog() }
+
+        adapter.setUserRole("Manager")
+        // Adapter item "more" click listener
+        adapter.onItemMoreClickListener = { material: Materials, view: View ->
+            val popup = PopupMenu(this, view)
+            popup.menuInflater.inflate(R.menu.more_menu, popup.menu)
+            popup.setOnMenuItemClickListener { menuItem ->
+               handleProductMenuClick(material, menuItem.itemId)
+            }
+            popup.show()
+        }
+    }
+
+    private fun handleProductMenuClick(material: Materials, menuItemId: Int): Boolean {
+        when (menuItemId) {
+            R.id.edit_product -> {
+                showEditMaterialDialog(material)
+            }
+
+            R.id.delete_product -> {
+                productMaterialsRepo.deleteProductById(material.id)
+
+                val successful = materialsRepo.deleteColumn(material.id!!)
+                if (!successful) {
+                    showCustomToast(this, "Delete failed")
+                    return false
+                }
+                val position = materialList.indexOf(material)
+                RecyclerUtils.deleteAt(materialList, position, adapter)
+                showCustomToast(this, "Material deleted successfully")
+            }
+        }
+        return true
     }
 
     // Show add material dialog
@@ -224,9 +248,6 @@ class MaterialsActivity : BaseActivity() {
 
         dialog.show()
     }
-
-
-
 
     // Show edit material dialog
     private fun showEditMaterialDialog(material: Materials?) {

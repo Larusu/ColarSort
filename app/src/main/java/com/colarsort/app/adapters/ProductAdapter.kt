@@ -10,9 +10,14 @@ import com.colarsort.app.models.Products
 import android.widget.ImageView
 import android.widget.TextView
 
-class ProductAdapter(private val products: ArrayList<Products>) : RecyclerView.Adapter<ProductAdapter.ViewHolder>() {
+class ProductAdapter(private val products: ArrayList<Products>,
+    private var userRole: String = "Manager"
+) : RecyclerView.Adapter<ProductAdapter.ViewHolder>() {
 
     var onItemMoreClickListener: ((Products, View) -> Unit)? = null
+
+    fun setUserRole(role: String) { userRole = role }
+
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val productImage: ImageView = itemView.findViewById(R.id.iv_productImage)
         val productName: TextView = itemView.findViewById(R.id.tv_productName)
@@ -28,8 +33,13 @@ class ProductAdapter(private val products: ArrayList<Products>) : RecyclerView.A
 
             productName.text = product.name
 
-            itemMenu.setOnClickListener {
-                onItemMoreClickListener?.invoke(product, it)
+            if (userRole == "Worker") {
+                itemMenu.visibility = View.GONE
+            } else {
+                itemMenu.visibility = View.VISIBLE
+                itemMenu.setOnClickListener {
+                    onItemMoreClickListener?.invoke(product, it)
+                }
             }
         }
     }
