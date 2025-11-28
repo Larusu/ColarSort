@@ -457,6 +457,7 @@ class ProductsActivity : BaseActivity() {
     }
 
     private fun syncProductMaterials(productId: Int, dialogBinding: DialogAddProductBinding) {
+        val unchangedMaterialIds = mutableSetOf<Int>()
 
         // 1️. Get OLD materials from DB
         val oldMaterials = productMaterialsRepo.getMaterialsPerProduct(productId)
@@ -473,9 +474,13 @@ class ProductsActivity : BaseActivity() {
 
             if (qtyText.isEmpty()) return
 
-            val qty = qtyText.toDoubleOrNull()
+            if (qtyText.isEmpty() || qtyText == "0") {
+                val material = materialsRepo.getAll().first { it.name == selectedName }
+                unchangedMaterialIds.add(material.id!!)
+                continue
+            }
 
-            if (qty == null || qty <= 0) return
+            val qty = qtyText.toDoubleOrNull() ?: continue
 
             val material = materialsRepo.getAll().first { it.name == selectedName }
 
@@ -512,8 +517,13 @@ class ProductsActivity : BaseActivity() {
         }
 
         oldMaterials.forEach { oldMat ->
-            if (newMaterials.none { it.materialId == oldMat.materialId }) {
-                toDelete.add(oldMat.materialId)
+            val matId = oldMat.materialId
+
+            val isUpdated = newMaterials.any { it.materialId == matId }
+            val isUnchanged = unchangedMaterialIds.contains(matId)
+
+            if (!isUpdated && !isUnchanged) {
+                toDelete.add(oldMat.productMaterialId)
             }
         }
 
