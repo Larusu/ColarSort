@@ -43,6 +43,13 @@ class SplashScreenActivity : BaseActivity() {
 
         startLogoAnimation()
         startLoadingTextRotation()
+
+        if (sessionManager.isLoggedIn()) {
+            moveToHomeActivity()
+        } else {
+            moveToLoginActivity()
+        }
+
         moveToLoginActivity()
     }
 
@@ -72,6 +79,14 @@ class SplashScreenActivity : BaseActivity() {
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
         }, 6500) // Splash duration
+    }
+    
+    private fun moveToHomeActivity()
+    {
+        handler.postDelayed( {
+            startActivity(Intent(this, HomeActivity::class.java))
+            finish()
+        }, 6500)
     }
 
     override fun onDestroy() {

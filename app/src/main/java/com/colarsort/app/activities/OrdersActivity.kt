@@ -28,8 +28,11 @@ import com.colarsort.app.models.Orders
 import com.colarsort.app.models.ProductionStatus
 import com.colarsort.app.repository.MaterialsRepo
 import com.colarsort.app.repository.OrderItemsRepo
+import com.colarsort.app.repository.ProductMaterialsRepo
 import com.colarsort.app.repository.ProductionStatusRepo
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.gson.Gson
+import androidx.core.content.edit
 
 class OrdersActivity : BaseActivity() {
 
@@ -51,6 +54,7 @@ class OrdersActivity : BaseActivity() {
         // Setup view binding
         binding = ActivityOrdersBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        restoreTempOrder()
 
         // Apply system window insets
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
@@ -61,11 +65,13 @@ class OrdersActivity : BaseActivity() {
 
         // Navigation click listeners
         binding.ivHome.setOnClickListener {
+            saveTempOrder()
             val intent = Intent(this, HomeActivity::class.java)
             startActivity(intent)
             finish()
         }
         binding.ivStatus.setOnClickListener {
+            saveTempOrder()
             val intent = Intent(this, ProductionStatusActivity::class.java)
             startActivity(intent)
             finish()
@@ -74,10 +80,12 @@ class OrdersActivity : BaseActivity() {
             showCustomToast(this, "You are already in Orders")
         }
         binding.ivProducts.setOnClickListener {
+            saveTempOrder()
             startActivity(Intent(this, ProductsActivity::class.java))
             finish()
         }
         binding.ivMaterials.setOnClickListener {
+            saveTempOrder()
             val intent = Intent(this, MaterialsActivity::class.java)
             startActivity(intent)
             finish()
@@ -195,13 +203,20 @@ class OrdersActivity : BaseActivity() {
             val productId = rowBinding.root.tag as? Int
             if (productId == null) {
                 showCustomToast(this, "Missing product id in row ${i + 1} — skipping")
-                continue
+                return
+            }
+            val productMaterialsRepo = ProductMaterialsRepo(dbHelper)
+            val hasMaterials = productMaterialsRepo.checkProductIfExists(productId)
+
+            if(!hasMaterials) {
+                showCustomToast(this, "Missing materials in product id row ${i + 1}")
+                return
             }
 
             val quantity = rowBinding.orderProductQuantity.text.toString().toIntOrNull() ?: 0
             if (quantity <= 0) {
                 showCustomToast(this, "Invalid quantity in row ${i + 1} — skipping")
-                continue
+                return
             }
 
             itemMaterials.add(productId to quantity)
@@ -238,6 +253,11 @@ class OrdersActivity : BaseActivity() {
             showCustomToast(this, "Failed to create order")
             return
         }
+
+        getSharedPreferences("TempOrder", MODE_PRIVATE)
+            .edit {
+                clear()
+            }
 
         val orderId = orderIdLong.toInt()
 
@@ -311,4 +331,50 @@ class OrdersActivity : BaseActivity() {
         // Dismiss dialog
         dialog.dismiss()
     }
+
+    private fun saveTempOrder() {
+        val container = binding.layoutMaterialsContainer
+        val items = mutableListOf<TempOrderItem>()
+
+        for (i in 0 until container.childCount) {
+            val row = container.getChildAt(i)
+            val rowBinding = OrderRowBinding.bind(row)
+
+            val productId = rowBinding.root.tag as? Int ?: continue
+            val qty = rowBinding.orderProductQuantity.text.toString().toIntOrNull() ?: 1
+
+            items.add(TempOrderItem(productId, qty))
+        }
+
+        val json = Gson().toJson(items)
+
+        val prefs = getSharedPreferences("TempOrder", MODE_PRIVATE)
+        prefs.edit {
+            putString("customerName", binding.etCustomerName.text.toString())
+                .putString("items", json)
+        }
+    }
+
+    private fun restoreTempOrder() {
+        val prefs = getSharedPreferences("TempOrder", MODE_PRIVATE)
+        val json = prefs.getString("items", null) ?: return
+
+        val items = Gson().fromJson(json, Array<TempOrderItem>::class.java)
+        val container = binding.layoutMaterialsContainer
+
+        binding.etCustomerName.setText(prefs.getString("customerName", ""))
+
+        for (item in items) {
+            val product = productsRepo.getById(item.productId) ?: continue
+            addProductToOrderList(product, container, Dialog(this))
+            val lastRow = container.getChildAt(container.childCount - 1)
+            val rowBinding = OrderRowBinding.bind(lastRow)
+            rowBinding.orderProductQuantity.setText(item.quantity.toString())
+        }
+    }
+
+    private data class TempOrderItem(
+        val productId: Int,
+        val quantity: Int
+    )
 }

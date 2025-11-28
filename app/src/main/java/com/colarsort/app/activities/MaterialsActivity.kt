@@ -168,9 +168,9 @@ class MaterialsActivity : BaseActivity() {
                 .setMessage("Are you sure you want to delete this material?")
                 .setPositiveButton("Yes") { _, _ ->
 
-                    productMaterialsRepo.deleteProductById(material.id)
+                    productMaterialsRepo.deleteById(material.id, false)
 
-                    val successful = materialsRepo.deleteColumn(material.id!!)
+                    val successful = materialsRepo.deleteColumn(material.id)
                     if (!successful) {
                         showCustomToast(this, "Delete failed")
                         return@setPositiveButton

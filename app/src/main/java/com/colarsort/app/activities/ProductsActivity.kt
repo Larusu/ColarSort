@@ -30,7 +30,6 @@ import com.colarsort.app.models.ProductMaterials
 import com.colarsort.app.models.Products
 import com.colarsort.app.repository.MaterialsRepo
 import com.colarsort.app.repository.OrderItemsRepo
-import com.colarsort.app.repository.OrdersRepo
 import com.colarsort.app.repository.ProductMaterialsRepo
 import com.colarsort.app.repository.ProductsRepo
 import com.colarsort.app.utils.RecyclerUtils
@@ -152,7 +151,14 @@ class ProductsActivity : BaseActivity() {
 
     private fun handleManagerSession()
     {
-        binding.btnAdd.setOnClickListener { showAddProductDialog() }
+        binding.btnAdd.setOnClickListener {
+            if(materialsRepo.getAll().isEmpty())
+            {
+                showCustomToast(this, "No materials found. Add a material first to continue")
+                return@setOnClickListener
+            }
+            showAddProductDialog()
+        }
 
         // Adapter item_more click listener
         adapter.onItemMoreClickListener = { product: Products, view: View ->
@@ -183,7 +189,7 @@ class ProductsActivity : BaseActivity() {
                 .setMessage("Are you sure you want to delete this product?")
                 .setPositiveButton("Yes") { _, _ ->
 
-                    productMaterialsRepo.deleteProductById(product.id)
+                    productMaterialsRepo.deleteById(product.id)
 
                     val successful = productsRepo.deleteColumn(product.id!!)
                     if (!successful) {

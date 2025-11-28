@@ -4,6 +4,7 @@ import android.database.Cursor
 import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.database.MaterialsTable
 import com.colarsort.app.database.OrderItemsTable
+import com.colarsort.app.database.OrdersTable
 import com.colarsort.app.database.ProductMaterialTable
 import com.colarsort.app.database.ProductsTable
 import com.colarsort.app.models.ProductMaterials
@@ -89,22 +90,24 @@ class ProductMaterialsRepo(dbHelper: DatabaseHelper) : CRUDRepo<ProductMaterials
         return listOfMaterials
     }
 
-    fun deleteProductById(productId: Int?)
+    fun deleteById(id: Int?, isProduct: Boolean = true)
     {
-        val db = dbHelper.writableDatabase
-        val rowsAffected = db.rawQuery(
-            "SELECT 1 FROM ${ProductMaterialTable.TABLE_NAME} WHERE ${ProductMaterialTable.PRODUCT_ID} = ? LIMIT 1",
-            arrayOf(productId.toString())
-        )
+        if (id == null) return
 
-        if(rowsAffected.count <= 0) return
+        val db = dbHelper.writableDatabase
+
+        val whereColumn = if (isProduct) {
+            ProductMaterialTable.PRODUCT_ID
+        } else {
+            ProductMaterialTable.MATERIAL_ID
+        }
 
         db.delete(
             ProductMaterialTable.TABLE_NAME,
-            "${ProductMaterialTable.PRODUCT_ID} = ?",
-            arrayOf(productId.toString())
+            "$whereColumn= ?",
+            arrayOf(id.toString())
         )
-        rowsAffected.close()
+
         db.close()
     }
 
@@ -113,11 +116,17 @@ class ProductMaterialsRepo(dbHelper: DatabaseHelper) : CRUDRepo<ProductMaterials
 
         val cursor = db.rawQuery(
             """
-        SELECT COUNT(*)
-        FROM ${OrderItemsTable.TABLE_NAME} oi
-        INNER JOIN ${ProductMaterialTable.TABLE_NAME} pm
-        ON oi.${OrderItemsTable.PRODUCT_ID} = pm.${ProductMaterialTable.PRODUCT_ID}
-        WHERE pm.${ProductMaterialTable.MATERIAL_ID} = ?
+        SELECT 
+            COUNT(*)
+        FROM 
+            ${OrderItemsTable.TABLE_NAME} oi
+        INNER JOIN 
+            ${ProductMaterialTable.TABLE_NAME} pm
+            ON oi.${OrderItemsTable.PRODUCT_ID} = pm.${ProductMaterialTable.PRODUCT_ID}
+        INNER JOIN ${OrdersTable.TABLE_NAME} o
+                ON o.${OrdersTable.ID} = oi.${OrderItemsTable.ORDER_ID}
+        WHERE pm.${ProductMaterialTable.MATERIAL_ID} = ? 
+            AND o.${OrdersTable.STATUS} != 'Completed';
         """.trimIndent(),
             arrayOf(materialId.toString())
         )
@@ -127,4 +136,17 @@ class ProductMaterialsRepo(dbHelper: DatabaseHelper) : CRUDRepo<ProductMaterials
         }
     }
 
+    fun checkProductIfExists(productId: Int) : Boolean
+    {
+        val db = dbHelper.readableDatabase
+
+        val cursor = db.rawQuery(
+            "SELECT 1 FROM $tableName WHERE ${ProductMaterialTable.PRODUCT_ID} = ?",
+            arrayOf(productId.toString())
+        )
+
+        cursor.use {
+            return it.moveToFirst()
+        }
+    }
 }
