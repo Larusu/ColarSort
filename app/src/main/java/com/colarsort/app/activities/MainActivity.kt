@@ -65,7 +65,7 @@ class MainActivity : BaseActivity() {
         val existingProducts = productsRepo.getAll()
         if (existingProducts.size < 4) {
             val product = arrayOf(
-                Products(null, "T-shirt", inputStreamToByteArray(this, "products/tshirt.png")),
+                Products(null, "T-shirt", inputStreamToByteArray(this, "products/t-shirt.png")),
                 Products(null, "Jeans", inputStreamToByteArray(this, "products/jeans.png")),
                 Products(null, "Sweater", inputStreamToByteArray(this, "products/sweater.png")),
                 Products(null, "Dress", inputStreamToByteArray(this, "products/dress.png")),
