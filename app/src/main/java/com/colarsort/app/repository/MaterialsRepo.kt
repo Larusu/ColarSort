@@ -5,6 +5,7 @@ import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.database.MaterialsTable
 import com.colarsort.app.database.ProductMaterialTable
 import com.colarsort.app.models.Materials
+import kotlin.math.floor
 
 class MaterialsRepo(dbHelper: DatabaseHelper) : CRUDRepo<Materials>(dbHelper)
 {
@@ -23,7 +24,7 @@ class MaterialsRepo(dbHelper: DatabaseHelper) : CRUDRepo<Materials>(dbHelper)
         return Materials(
             id = cursor.getInt(cursor.getColumnIndexOrThrow(MaterialsTable.ID)),
             name = cursor.getString(cursor.getColumnIndexOrThrow(MaterialsTable.NAME)),
-            quantity = cursor.getDouble(cursor.getColumnIndexOrThrow(MaterialsTable.QUANTITY)),
+            quantity = floor(cursor.getDouble(cursor.getColumnIndexOrThrow(MaterialsTable.QUANTITY)) * 100) / 100.0,
             unit = cursor.getString(cursor.getColumnIndexOrThrow(MaterialsTable.UNIT)),
             stockThreshold = cursor.getDouble(cursor.getColumnIndexOrThrow(MaterialsTable.LOW_STOCK_THRESHOLD)),
             image = cursor.getBlob(cursor.getColumnIndexOrThrow(MaterialsTable.IMAGE))
@@ -60,41 +61,59 @@ class MaterialsRepo(dbHelper: DatabaseHelper) : CRUDRepo<Materials>(dbHelper)
         )
     }
 
-    fun checkMaterialQuantity(quantity: Int, productId : Int) : List<String>
+    fun checkMaterialQuantity(items: List<Pair<Int, Int>>): List<String>
     {
         val db = dbHelper.readableDatabase
-        val query =
-            """
-            SELECT
-                m.${MaterialsTable.NAME} AS m_name
-            FROM
-                ${ProductMaterialTable.TABLE_NAME} AS pm
-            JOIN
-                ${MaterialsTable.TABLE_NAME} AS m
-                ON ${ProductMaterialTable.MATERIAL_ID} = m.${MaterialsTable.ID}
-            WHERE
-                 pm.${ProductMaterialTable.PRODUCT_ID} = ?
-            AND 
-                m.${MaterialsTable.QUANTITY} < (pm.${ProductMaterialTable.QUANTITY_REQUIRED} * ?);
-            """.trimIndent()
+        val requiredMap = mutableMapOf<Int, Double>()
 
-        val cursor = db.rawQuery(
-            query,
-            arrayOf(productId.toString(), quantity.toString())
-        )
+        for ((productId, qty) in items) {
+            val cursor = db.rawQuery(
+                """
+            SELECT material_id, quantity_required
+            FROM ${ProductMaterialTable.TABLE_NAME}
+            WHERE product_id = ?
+            """.trimIndent(),
+                arrayOf(productId.toString())
+            )
 
-        val insufficientList = mutableListOf<String>()
+            while (cursor.moveToNext()) {
+                val materialId = cursor.getInt(0)
+                val requiredPerUnit = cursor.getDouble(1)
 
-        while (cursor.moveToNext())
-        {
-            val matName = cursor.getString(cursor.getColumnIndexOrThrow("m_name"))
-            insufficientList.add(matName)
+                val totalRequired = requiredPerUnit * qty
+                requiredMap[materialId] = (requiredMap[materialId] ?: 0.0) + totalRequired
+            }
+
+            cursor.close()
+        }
+
+        // Check if any material lacks stock
+        val insufficient = mutableListOf<String>()
+
+        requiredMap.forEach { (materialId, totalRequired) ->
+            val cursor = db.rawQuery(
+                """
+            SELECT name, quantity
+            FROM ${MaterialsTable.TABLE_NAME}
+            WHERE id = ?
+            """.trimIndent(),
+                arrayOf(materialId.toString())
+            )
+
+            if (cursor.moveToFirst()) {
+                val name = cursor.getString(0)
+                val available = cursor.getDouble(1)
+
+                if (available < totalRequired) {
+                    insufficient.add(name)
+                }
+            }
+
+            cursor.close()
         }
 
         db.close()
-        cursor.close()
-
-        return insufficientList
+        return insufficient
     }
 
     fun searchMaterialBaseOnName(searchName : String) : List<Materials>

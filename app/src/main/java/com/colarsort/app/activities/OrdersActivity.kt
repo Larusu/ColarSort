@@ -183,6 +183,10 @@ class OrdersActivity : BaseActivity() {
 
         val materialRepo = MaterialsRepo(dbHelper)
 
+        // Collect all rows as (productId, quantity)
+        val itemMaterials = mutableListOf<Pair<Int, Int>>()
+
+        // Validate stock
         for (i in 0 until container.childCount)
         {
             val row = container.getChildAt(i)
@@ -200,19 +204,21 @@ class OrdersActivity : BaseActivity() {
                 continue
             }
 
-            val insufficientMaterials = materialRepo.checkMaterialQuantity(quantity = quantity, productId = productId)
-
-            if (insufficientMaterials.isNotEmpty()) {
-                val message = insufficientMaterials.joinToString("\n") { "• $it" }
-
-                MaterialAlertDialogBuilder(this)
-                    .setTitle("Insufficient Materials")
-                    .setMessage("The following materials are not enough:\n\n$message")
-                    .setPositiveButton("OK", null)
-                    .show()
-                return
-            }
+            itemMaterials.add(productId to quantity)
         }
+
+        val insufficientMaterials = materialRepo.checkMaterialQuantity(itemMaterials)
+        if (insufficientMaterials.isNotEmpty()) {
+            val message = insufficientMaterials.joinToString("\n") { "• $it" }
+
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Insufficient Materials")
+                .setMessage("The following materials are not enough:\n\n$message")
+                .setPositiveButton("OK", null)
+                .show()
+            return
+        }
+
         // build order metadata
         val productCount = container.childCount
         val numberOfDays = productCount * 2
@@ -242,10 +248,10 @@ class OrdersActivity : BaseActivity() {
             val productId = rowBinding.root.tag as? Int
             val quantity = rowBinding.orderProductQuantity.text.toString().toIntOrNull() ?: 0
 
-            materialRepo.setQuantity(quantity, productId!!)
-
             val orderItem = OrderItems(id = null, orderId = orderId, productId = productId, quantity = quantity)
             orderItemsRepo.insert(orderItem)
+
+            materialRepo.setQuantity(quantity, productId!!)
 
             val orderItemId = orderItemsRepo.getLastInsertedId()
             val productionStatusModel = ProductionStatus(null, orderItemId, 0, 0, 0, 0)
