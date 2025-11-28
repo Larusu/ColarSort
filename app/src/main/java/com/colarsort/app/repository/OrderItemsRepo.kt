@@ -46,4 +46,18 @@ class OrderItemsRepo(dbHelper: DatabaseHelper) : CRUDRepo<OrderItems>(dbHelper)
         db.close()
         return latestId
     }
+
+    fun hasOrdersForProduct(productId: Int): Boolean {
+        val db = dbHelper.readableDatabase
+
+        val cursor = db.rawQuery(
+            "SELECT COUNT(*) FROM ${OrderItemsTable.TABLE_NAME} WHERE ${OrderItemsTable.PRODUCT_ID} = ?",
+            arrayOf(productId.toString())
+        )
+
+        cursor.use {
+            return if (it.moveToFirst()) it.getInt(0) > 0 else false
+        }
+    }
+
 }

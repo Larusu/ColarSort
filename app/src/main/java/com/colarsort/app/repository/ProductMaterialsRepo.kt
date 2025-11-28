@@ -3,6 +3,7 @@ package com.colarsort.app.repository
 import android.database.Cursor
 import com.colarsort.app.database.DatabaseHelper
 import com.colarsort.app.database.MaterialsTable
+import com.colarsort.app.database.OrderItemsTable
 import com.colarsort.app.database.ProductMaterialTable
 import com.colarsort.app.database.ProductsTable
 import com.colarsort.app.models.ProductMaterials
@@ -106,4 +107,24 @@ class ProductMaterialsRepo(dbHelper: DatabaseHelper) : CRUDRepo<ProductMaterials
         rowsAffected.close()
         db.close()
     }
+
+    fun isMaterialUsedInAnyOrder(materialId: Int): Boolean {
+        val db = dbHelper.readableDatabase
+
+        val cursor = db.rawQuery(
+            """
+        SELECT COUNT(*)
+        FROM ${OrderItemsTable.TABLE_NAME} oi
+        INNER JOIN ${ProductMaterialTable.TABLE_NAME} pm
+        ON oi.${OrderItemsTable.PRODUCT_ID} = pm.${ProductMaterialTable.PRODUCT_ID}
+        WHERE pm.${ProductMaterialTable.MATERIAL_ID} = ?
+        """.trimIndent(),
+            arrayOf(materialId.toString())
+        )
+
+        cursor.use {
+            return if (it.moveToFirst()) it.getInt(0) > 0 else false
+        }
+    }
+
 }

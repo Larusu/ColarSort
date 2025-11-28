@@ -29,6 +29,8 @@ import com.colarsort.app.databinding.MaterialRowBinding
 import com.colarsort.app.models.ProductMaterials
 import com.colarsort.app.models.Products
 import com.colarsort.app.repository.MaterialsRepo
+import com.colarsort.app.repository.OrderItemsRepo
+import com.colarsort.app.repository.OrdersRepo
 import com.colarsort.app.repository.ProductMaterialsRepo
 import com.colarsort.app.repository.ProductsRepo
 import com.colarsort.app.utils.RecyclerUtils
@@ -42,6 +44,7 @@ class ProductsActivity : BaseActivity() {
     private lateinit var productsRepo: ProductsRepo
     private lateinit var materialsRepo: MaterialsRepo
     private lateinit var productMaterialsRepo: ProductMaterialsRepo
+    private lateinit var orderItemsRepo: OrderItemsRepo
     private val productList = ArrayList<Products>()
     private var tempDialogImageView: ImageView? = null
     private var selectedImageBytes: ByteArray? = null
@@ -53,6 +56,7 @@ class ProductsActivity : BaseActivity() {
         productsRepo = ProductsRepo(dbHelper)
         materialsRepo = MaterialsRepo(dbHelper)
         productMaterialsRepo = ProductMaterialsRepo(dbHelper)
+        orderItemsRepo = OrderItemsRepo(dbHelper)
 
         // Setup view binding
         binding = ActivityProductsBinding.inflate(layoutInflater)
@@ -168,16 +172,36 @@ class ProductsActivity : BaseActivity() {
         }
 
         if(menuItemId == R.id.delete_product) {
-            productMaterialsRepo.deleteProductById(product.id)
 
-            val successful = productsRepo.deleteColumn(product.id!!)
-            if (!successful) {
-                showCustomToast(this, "Delete failed")
-                return false
+            if (orderItemsRepo.hasOrdersForProduct(product.id!!)) {
+                showCustomToast(this, "Cannot delete product with active orders")
+                return true
             }
-            val position = productList.indexOf(product)
-            RecyclerUtils.deleteAt(productList, position, adapter)
-            showCustomToast(this, "Material deleted successfully")
+
+            val dialog = AlertDialog.Builder(this)
+                .setTitle("Delete Product")
+                .setMessage("Are you sure you want to delete this product?")
+                .setPositiveButton("Yes") { _, _ ->
+
+                    productMaterialsRepo.deleteProductById(product.id)
+
+                    val successful = productsRepo.deleteColumn(product.id!!)
+                    if (!successful) {
+                        showCustomToast(this, "Delete failed")
+                        return@setPositiveButton
+                    }
+
+                    val position = productList.indexOf(product)
+                    RecyclerUtils.deleteAt(productList, position, adapter)
+                    showCustomToast(this, "Material deleted successfully")
+
+                }
+                .setNegativeButton("No") { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .show()
+
+            return true
         }
 
         return true
@@ -531,5 +555,13 @@ class ProductsActivity : BaseActivity() {
         toInsert.forEach { productMaterialsRepo.insert(it) }
         toUpdate.forEach { productMaterialsRepo.update(it) }
         toDelete.forEach { productMaterialsRepo.deleteColumn(it) }
+    }
+
+    private fun updateEmptyView() {
+        if (productList.isEmpty()) {
+            binding.tvEmpty.visibility = View.VISIBLE
+        } else {
+            binding.tvEmpty.visibility = View.GONE
+        }
     }
 }

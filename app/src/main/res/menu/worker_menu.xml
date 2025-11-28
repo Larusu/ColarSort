@@ -2,10 +2,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
-        android:id="@+id/add_worker"
-        android:title="Add worker"/>
-
-    <item
         android:id="@+id/log_out"
         android:title="Log out"/>
+
 </menu>

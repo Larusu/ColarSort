@@ -151,26 +151,49 @@ class MaterialsActivity : BaseActivity() {
 
     private fun handleProductMenuClick(material: Materials, menuItemId: Int): Boolean {
 
-        if(menuItemId == R.id.edit_product)
-        {
+        if (menuItemId == R.id.edit_product) {
             showEditMaterialDialog(material)
+            return true
         }
 
-        if(menuItemId == R.id.delete_product)
-        {
-            productMaterialsRepo.deleteProductById(material.id)
+        if (menuItemId == R.id.delete_product) {
 
-            val successful = materialsRepo.deleteColumn(material.id!!)
-            if (!successful) {
-                showCustomToast(this, "Delete failed")
-                return false
+            if (productMaterialsRepo.isMaterialUsedInAnyOrder(material.id!!)) {
+                showCustomToast(this, "Cannot delete material. It is used in products with active orders.")
+                return true
             }
-            val position = materialList.indexOf(material)
-            RecyclerUtils.deleteAt(materialList, position, adapter)
-            showCustomToast(this, "Material deleted successfully")
+
+            AlertDialog.Builder(this)
+                .setTitle("Delete Material")
+                .setMessage("Are you sure you want to delete this material?")
+                .setPositiveButton("Yes") { _, _ ->
+
+                    productMaterialsRepo.deleteProductById(material.id)
+
+                    val successful = materialsRepo.deleteColumn(material.id!!)
+                    if (!successful) {
+                        showCustomToast(this, "Delete failed")
+                        return@setPositiveButton
+                    }
+
+                    val position = materialList.indexOf(material)
+                    if (position != -1) {
+                        RecyclerUtils.deleteAt(materialList, position, adapter)
+                    }
+
+                    showCustomToast(this, "Material deleted successfully")
+                }
+                .setNegativeButton("No") { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .show()
+
+            return true
         }
+
         return true
     }
+
 
     // Show add material dialog
     private fun showAddMaterialDialog() {

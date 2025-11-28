@@ -20,7 +20,6 @@ import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
 
 class HomeActivity : BaseActivity() {
-
     private lateinit var binding: ActivityHomeBinding
     private lateinit var orderRepo: OrdersRepo
     private lateinit var productsRepo: ProductsRepo
