@@ -83,24 +83,21 @@ class UsersRepo(private val dbHelper: DatabaseHelper)
         val dataList = mutableListOf<Users>()
 
         val cursor = db.rawQuery(
-            "SELECT ${UserTable.USERNAME}, ${UserTable.ROLE} " +
+            "SELECT ${UserTable.ID}, ${UserTable.USERNAME}, ${UserTable.ROLE} " +
                     "FROM ${UserTable.TABLE_NAME} " +
-                    "ORDER BY " +
-                    "   CASE " +
-                    "       WHEN ${UserTable.ROLE} = 'Manager' THEN 0 " +
-                    "       WHEN ${UserTable.ROLE} = 'Worker' THEN 1" +
-                    "       ELSE 2" +
-                    "   END," +
+                    "ORDER BY CASE " +
+                    "WHEN ${UserTable.ROLE} = 'Manager' THEN 0 " +
+                    "WHEN ${UserTable.ROLE} = 'Worker' THEN 1 ELSE 2 END, " +
                     "${UserTable.USERNAME} ASC",
-            arrayOf()
+            null
         )
 
         cursor.use {
-            while (it.moveToNext())
-            {
+            while (it.moveToNext()) {
+                val id = it.getInt(it.getColumnIndexOrThrow(UserTable.ID))
                 val name = it.getString(it.getColumnIndexOrThrow(UserTable.USERNAME))
                 val role = it.getString(it.getColumnIndexOrThrow(UserTable.ROLE))
-                val user = Users(null, name, role, null)
+                val user = Users(id as Integer?, name, role, null)  // set real ID
                 dataList.add(user)
             }
         }
@@ -110,4 +107,19 @@ class UsersRepo(private val dbHelper: DatabaseHelper)
 
         return dataList
     }
+
+    /**
+     * Deletes a user based on ID
+     */
+    fun deleteUser(userId: Int): Boolean {
+        val db = dbHelper.writableDatabase
+        val rowsDeleted = db.delete(
+            UserTable.TABLE_NAME,
+            "${UserTable.ID} = ?",
+            arrayOf(userId.toString())
+        )
+        db.close()
+        return rowsDeleted > 0
+    }
+
 }

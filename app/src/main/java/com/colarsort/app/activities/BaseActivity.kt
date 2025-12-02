@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.EditText
 import android.widget.PopupMenu
+import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -18,6 +19,9 @@ import com.colarsort.app.session.SessionManager
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
 import com.google.android.material.button.MaterialButton
 import androidx.core.graphics.drawable.toDrawable
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.colarsort.app.adapters.UserAdapter
+import com.colarsort.app.databinding.DialogViewWorkersBinding
 
 open class BaseActivity : AppCompatActivity() {
 
@@ -102,6 +106,28 @@ open class BaseActivity : AppCompatActivity() {
                                     showCustomToast(this, "Failed to add worker")
                                 }
                             }
+                        }
+
+                        R.id.view_workers -> {
+
+                            val dialogBinding = DialogViewWorkersBinding.inflate(layoutInflater)
+
+                            val users = ArrayList(usersRepo.getAll())
+
+                            // Setup RecyclerView
+                            dialogBinding.rvViewWorkers.adapter = UserAdapter(users, usersRepo)
+                            dialogBinding.rvViewWorkers.layoutManager = LinearLayoutManager(this)
+
+                            val dialog = AlertDialog.Builder(this)
+                                .setView(dialogBinding.root)
+                                .setCancelable(true)
+                                .create()
+
+                            dialog.window?.setBackgroundDrawable(
+                                Color.TRANSPARENT.toDrawable()
+                            )
+
+                            dialog.show()
                         }
 
                         R.id.log_out -> showLogoutDialog()

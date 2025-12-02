@@ -6,6 +6,10 @@
         android:title="Add worker"/>
 
     <item
+        android:id="@+id/view_workers"
+        android:title="View workers"/>
+
+    <item
         android:id="@+id/log_out"
         android:title="Log out"/>
 </menu>
