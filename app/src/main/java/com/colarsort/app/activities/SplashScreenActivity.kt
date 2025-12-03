@@ -1,6 +1,9 @@
 package com.colarsort.app.activities
 
+import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -8,11 +11,10 @@ import android.view.animation.AlphaAnimation
 import com.colarsort.app.databinding.ActivitySplashScreenBinding
 import com.colarsort.app.models.Materials
 import com.colarsort.app.models.ProductMaterials
-import com.colarsort.app.models.Products
 import com.colarsort.app.repository.MaterialsRepo
 import com.colarsort.app.repository.ProductMaterialsRepo
 import com.colarsort.app.repository.ProductsRepo
-import com.colarsort.app.utils.UtilityHelper.inputStreamToByteArray
+import com.colarsort.app.utils.UtilityHelper.compressBitmap
 
 class SplashScreenActivity : BaseActivity() {
     private lateinit var binding: ActivitySplashScreenBinding
@@ -43,6 +45,7 @@ class SplashScreenActivity : BaseActivity() {
 
         startLogoAnimation()
         startLoadingTextRotation()
+        initializeData()
 
         if (sessionManager.isLoggedIn()) {
             moveToHomeActivity()
@@ -96,36 +99,48 @@ class SplashScreenActivity : BaseActivity() {
 
     private fun initializeData()
     {
+//        val existingMaterials = materialsRepo.getAll()
+//        if (existingMaterials.size < 4) {
+//            val material = arrayOf(
+//                Materials(null, "Cotton", 100.0, "m", 10.0, inputStreamToByteArray(this, "materials/cotton_fabric.jpg")),
+//                Materials(null, "Canvas", 200.0, "m", 15.0, inputStreamToByteArray(this, "materials/canvas_fabric.jpg")),
+//                Materials(null, "Polyester", 150.0, "m", 12.0, inputStreamToByteArray(this, "materials/polyester_fabric.jpg")),
+//                Materials(null, "Thread Roll", 20.0, "roll", 5.0, inputStreamToByteArray(this, "materials/thread_roll.jpg")),
+//                Materials(null, "Button", 300.0, "pcs", 20.0, inputStreamToByteArray(this, "materials/button.jpg")),
+//                Materials(null, "Zipper", 100.0, "pcs", 20.0, inputStreamToByteArray(this, "materials/zipper.jpg")),
+//                Materials(null, "Elastic Band", 80.0, "m", 5.0, inputStreamToByteArray(this, "materials/elastic_band.jpg")),
+//                Materials(null, "Velcro Strip", 120.0, "m", 10.0, inputStreamToByteArray(this, "materials/velcro_strip.jpg"))
+//            )
+//            material.forEach { m -> materialsRepo.insert(m) }
+//        }
+
         val existingMaterials = materialsRepo.getAll()
-        if (existingMaterials.size < 4) {
+        if(existingMaterials.size < 4)
+        {
             val material = arrayOf(
-                Materials(null, "Cotton", 100.0, "m", 10.0, inputStreamToByteArray(this, "materials/cotton_fabric.jpg")),
-                Materials(null, "Canvas", 200.0, "m", 15.0, inputStreamToByteArray(this, "materials/canvas_fabric.jpg")),
-                Materials(null, "Polyester", 150.0, "m", 12.0, inputStreamToByteArray(this, "materials/polyester_fabric.jpg")),
-                Materials(null, "Thread Roll", 20.0, "roll", 5.0, inputStreamToByteArray(this, "materials/thread_roll.jpg")),
-                Materials(null, "Button", 300.0, "pcs", 20.0, inputStreamToByteArray(this, "materials/button.jpg")),
-                Materials(null, "Zipper", 100.0, "pcs", 20.0, inputStreamToByteArray(this, "materials/zipper.jpg")),
-                Materials(null, "Elastic Band", 80.0, "m", 5.0, inputStreamToByteArray(this, "materials/elastic_band.jpg")),
-                Materials(null, "Velcro Strip", 120.0, "m", 10.0, inputStreamToByteArray(this, "materials/velcro_strip.jpg"))
+                Materials(null, "Cotton", 100.0, "m", 10.0, compressBitmap(this, loadAssetBitmap(this, "materials/cotton_fabric.jpg"))),
+                Materials(null, "Canvas", 200.0, "m", 15.0,  compressBitmap(this, loadAssetBitmap(this, "materials/canvas_fabric.jpg"))),
+                Materials(null, "Polyester", 150.0, "m", 12.0, compressBitmap(this, loadAssetBitmap(this, "materials/polyester_fabric.jpg")))
             )
+
             material.forEach { m -> materialsRepo.insert(m) }
         }
 
-        val existingProducts = productsRepo.getAll()
-        if (existingProducts.size < 4) {
-            val product = arrayOf(
-                Products(null, "T-shirt", inputStreamToByteArray(this, "products/tshirt.png")),
-                Products(null, "Jeans", inputStreamToByteArray(this, "products/jeans.png")),
-                Products(null, "Sweater", inputStreamToByteArray(this, "products/sweater.png")),
-                Products(null, "Dress", inputStreamToByteArray(this, "products/dress.png")),
-                Products(null, "Shoes", inputStreamToByteArray(this, "products/shoes.png")),
-                Products(null, "Hat", inputStreamToByteArray(this, "products/hat.png")),
-                Products(null, "Jacket", inputStreamToByteArray(this, "products/jacket.png")),
-                Products(null, "Gloves", inputStreamToByteArray(this, "products/gloves.png")),
-                Products(null, "Scarf", inputStreamToByteArray(this, "products/scarf.jpg"))
-            )
-            product.forEach { p -> productsRepo.insert(p) }
-        }
+//        val existingProducts = productsRepo.getAll()
+//        if (existingProducts.size < 4) {
+//            val product = arrayOf(
+//                Products(null, "T-shirt", inputStreamToByteArray(this, "products/tshirt.png")),
+//                Products(null, "Jeans", inputStreamToByteArray(this, "products/jeans.png")),
+//                Products(null, "Sweater", inputStreamToByteArray(this, "products/sweater.png")),
+//                Products(null, "Dress", inputStreamToByteArray(this, "products/dress.png")),
+//                Products(null, "Shoes", inputStreamToByteArray(this, "products/shoes.png")),
+//                Products(null, "Hat", inputStreamToByteArray(this, "products/hat.png")),
+//                Products(null, "Jacket", inputStreamToByteArray(this, "products/jacket.png")),
+//                Products(null, "Gloves", inputStreamToByteArray(this, "products/gloves.png")),
+//                Products(null, "Scarf", inputStreamToByteArray(this, "products/scarf.jpg"))
+//            )
+//            product.forEach { p -> productsRepo.insert(p) }
+//        }
 
         val existingProductMaterials = productMaterialsRepo.getAll()
 
@@ -200,6 +215,11 @@ class SplashScreenActivity : BaseActivity() {
             for (pm in productMaterials) {
                 productMaterialsRepo.insert(pm)
             }
+        }
+    }
+    fun loadAssetBitmap(context: Context, assetPath: String): Bitmap {
+        context.assets.open(assetPath).use { input ->
+            return BitmapFactory.decodeStream(input)
         }
     }
 }

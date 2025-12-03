@@ -7,6 +7,15 @@ android {
     namespace = "com.colarsort.app"
     compileSdk = 36
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("C:/Users/Lars Timajo/OneDrive/Desktop/CollarSort-release-key.jks")
+            storePassword = "123456"
+            keyAlias = "CollarSortkey"
+            keyPassword = "123456"
+        }
+    }
+
     defaultConfig {
         applicationId = "com.colarsort.app"
         minSdk = 24
@@ -24,6 +33,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
@@ -50,5 +60,6 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.mpandroidchart)
-    implementation("com.google.code.gson:gson:2.13.2")
+    implementation(libs.gson)
+    implementation(libs.coil)
 }

@@ -32,7 +32,7 @@ class MaterialAdapter(private val materials: ArrayList<Materials>,
 
         fun bind(material: Materials) {
             if (material.image != null) {
-                val bitmap = BitmapFactory.decodeByteArray(material.image, 0, material.image.size)
+                val bitmap = BitmapFactory.decodeFile(material.image)
                 materialImg.setImageBitmap(bitmap)
             } else {
                 materialImg.setImageResource(R.drawable.default_img) // fallback image

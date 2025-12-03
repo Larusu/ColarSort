@@ -19,7 +19,7 @@ class ProductsRepo(dbHelper: DatabaseHelper) : CRUDRepo<Products>(dbHelper)
         return Products(
             id = cursor.getInt(cursor.getColumnIndexOrThrow(ProductsTable.ID)),
             name = cursor.getString(cursor.getColumnIndexOrThrow(ProductsTable.NAME)),
-            image = cursor.getBlob(cursor.getColumnIndexOrThrow(ProductsTable.IMAGE))
+            image = cursor.getString(cursor.getColumnIndexOrThrow(ProductsTable.IMAGE))
         )
     }
 

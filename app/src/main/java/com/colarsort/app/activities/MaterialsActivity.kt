@@ -2,7 +2,6 @@ package com.colarsort.app.activities
 
 import android.app.Dialog
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.ImageDecoder
 import android.os.Build
@@ -20,6 +19,7 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
+import coil.load
 import com.colarsort.app.R
 import com.colarsort.app.adapters.MaterialAdapter
 import com.colarsort.app.databinding.ActivityMaterialsBinding
@@ -40,7 +40,7 @@ class MaterialsActivity : BaseActivity() {
     private lateinit var adapter: MaterialAdapter
     private val materialList = ArrayList<Materials>()
     private var tempDialogImageView: ImageView? = null
-    private var selectedImageBytes: ByteArray? = null
+    private var selectedImageBytes: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -129,7 +129,7 @@ class MaterialsActivity : BaseActivity() {
                 MediaStore.Images.Media.getBitmap(contentResolver, uri)
             }
             tempDialogImageView?.setImageBitmap(bitmap)
-            selectedImageBytes = compressBitmap(bitmap)
+            selectedImageBytes = compressBitmap(this, bitmap)
         }
     }
 
@@ -294,8 +294,8 @@ class MaterialsActivity : BaseActivity() {
             dialogBinding.spMaterialUnit.setSelection(unitPosition)
             dialogBinding.etMaterialQuantity.setText(it.quantity.toString())
             dialogBinding.etLowStockThreshold.setText(it.stockThreshold.toString())
-            it.image?.let { bytes ->
-                dialogBinding.ivMaterialImage.setImageBitmap(BitmapFactory.decodeByteArray(bytes, 0, bytes.size))
+            it.image?.let { path ->
+                dialogBinding.ivMaterialImage.load(path)
             }
         }
 

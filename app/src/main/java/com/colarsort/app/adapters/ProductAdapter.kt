@@ -25,7 +25,7 @@ class ProductAdapter(private val products: ArrayList<Products>,
 
         fun bind(product: Products) {
             if (product.image != null) {
-                val bitmap = BitmapFactory.decodeByteArray(product.image, 0, product.image.size)
+                val bitmap = BitmapFactory.decodeFile(product.image)
                 productImage.setImageBitmap(bitmap)
             } else {
                 productImage.setImageResource(R.drawable.default_img) // fallback image

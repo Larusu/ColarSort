@@ -6,33 +6,11 @@ import android.graphics.Bitmap
 import android.view.LayoutInflater
 import android.widget.TextView
 import android.widget.Toast
-import androidx.core.graphics.scale
 import com.colarsort.app.R
-import java.io.ByteArrayOutputStream
+import java.io.File
 import java.security.MessageDigest
 
 object UtilityHelper {
-    /**
-     * Reads an image file from the 'assets' directory and returns as ByteArray
-     * It is useful to store image in the Products data class that expects ByteArray
-     *
-     * @param context The context used to access the assets folder.
-     * @param image The filename of the image in the assets directory.
-     *
-     * ### Usage example:
-     *  ```
-     *  val bytes: ByteArray = inputStreamToByteArray(this, "Sample.png")
-     *  ```
-     */
-    fun inputStreamToByteArray(context: Context, image: String) : ByteArray
-    {
-        val inputStream = context.assets.open(image)
-        val imageBytes = inputStream.readBytes()
-        inputStream.close()
-
-        return imageBytes
-    }
-
     /**
      * Generates a SHA-256 hash of a password.
      *
@@ -52,22 +30,27 @@ object UtilityHelper {
     }
 
     /**
-     * Compresses a bitmap into a JPEG byte array after scaling it to 500x500 pixels.
+     * Compresses a bitmap into a JPEG file and saves it in the app's internal storage.
      *
-     * The bitmap is first resized, then compressed at 70% quality, and the result is
-     * returned as a byte array suitable for storage or database insertion
+     * The image is stored inside the `/files/images` directory using a timestamp-based
+     * filename. The bitmap is compressed at 70% JPEG quality and written to disk.
      *
-     * @param bitmap The original bitmap to compress
-     * @return a JPEG-Compressed byte array of the scaled bitmap
+     * @param context The application context used to access internal storage.
+     * @param bitmap The bitmap image to compress and save.
+     * @return The absolute file path of the saved compressed image.
      */
-    fun compressBitmap(bitmap: Bitmap): ByteArray {
-        val outputStream = ByteArrayOutputStream()
+    fun compressBitmap(context: Context, bitmap: Bitmap): String
+    {
+        val imagesDir = File(context.filesDir, "images")
+        if (!imagesDir.exists()) imagesDir.mkdir()
 
-        val scaled = bitmap.scale(500, 500)
+        val file = File(imagesDir, "img_${System.currentTimeMillis()}.jpg")
 
-        scaled.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
+        file.outputStream().use {
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 70, it)
+        }
 
-        return outputStream.toByteArray()
+        return file.absolutePath
     }
 
     /**

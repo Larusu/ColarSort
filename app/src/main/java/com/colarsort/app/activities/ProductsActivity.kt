@@ -2,7 +2,6 @@ package com.colarsort.app.activities
 
 import android.app.Dialog
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.ImageDecoder
 import android.os.Build
@@ -21,6 +20,7 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.GridLayoutManager
+import coil.load
 import com.colarsort.app.R
 import com.colarsort.app.adapters.ProductAdapter
 import com.colarsort.app.databinding.ActivityProductsBinding
@@ -46,7 +46,7 @@ class ProductsActivity : BaseActivity() {
     private lateinit var orderItemsRepo: OrderItemsRepo
     private val productList = ArrayList<Products>()
     private var tempDialogImageView: ImageView? = null
-    private var selectedImageBytes: ByteArray? = null
+    private var selectedImageBytes: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -144,8 +144,8 @@ class ProductsActivity : BaseActivity() {
                 @Suppress("DEPRECATION")
                 MediaStore.Images.Media.getBitmap(contentResolver, uri)
             }
-            tempDialogImageView?.setImageBitmap(bitmap) // Show in dialog
-            selectedImageBytes = compressBitmap(bitmap) // Compress and store
+            tempDialogImageView?.setImageBitmap(bitmap)
+            selectedImageBytes = compressBitmap(this, bitmap)
         }
     }
 
@@ -184,14 +184,14 @@ class ProductsActivity : BaseActivity() {
                 return true
             }
 
-            val dialog = AlertDialog.Builder(this)
+            AlertDialog.Builder(this)
                 .setTitle("Delete Product")
                 .setMessage("Are you sure you want to delete this product?")
                 .setPositiveButton("Yes") { _, _ ->
 
                     productMaterialsRepo.deleteById(product.id)
 
-                    val successful = productsRepo.deleteColumn(product.id!!)
+                    val successful = productsRepo.deleteColumn(product.id)
                     if (!successful) {
                         showCustomToast(this, "Delete failed")
                         return@setPositiveButton
@@ -261,7 +261,7 @@ class ProductsActivity : BaseActivity() {
         dialogBinding: DialogAddProductBinding,
         layoutMaterialsContainer: LinearLayout,
         dialog: Dialog,
-        selectedImageBytes: ByteArray?
+        selectedImageBytes: String?
     )
     {
         val name = dialogBinding.etProductName.text.toString().trim()
@@ -455,10 +455,8 @@ class ProductsActivity : BaseActivity() {
     private fun fillProductDetails(product: Products, dialogBinding: DialogAddProductBinding) {
         dialogBinding.etProductName.setText(product.name)
 
-        product.image?.let { bytes ->
-            dialogBinding.ivProductImage.setImageBitmap(
-                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-            )
+        product.image?.let { path ->
+            dialogBinding.ivProductImage.load(path)
         }
 
         val usedMaterials = productMaterialsRepo.getMaterialsPerProduct(product.id!!)
@@ -561,13 +559,5 @@ class ProductsActivity : BaseActivity() {
         toInsert.forEach { productMaterialsRepo.insert(it) }
         toUpdate.forEach { productMaterialsRepo.update(it) }
         toDelete.forEach { productMaterialsRepo.deleteColumn(it) }
-    }
-
-    private fun updateEmptyView() {
-        if (productList.isEmpty()) {
-            binding.tvEmpty.visibility = View.VISIBLE
-        } else {
-            binding.tvEmpty.visibility = View.GONE
-        }
     }
 }

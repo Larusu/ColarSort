@@ -2,7 +2,6 @@ package com.colarsort.app.activities
 
 import android.app.Dialog
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.View
 import android.widget.LinearLayout
@@ -33,6 +32,7 @@ import com.colarsort.app.repository.ProductionStatusRepo
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.gson.Gson
 import androidx.core.content.edit
+import coil.load
 
 class OrdersActivity : BaseActivity() {
 
@@ -302,9 +302,8 @@ class OrdersActivity : BaseActivity() {
         rowBinding.orderProductQuantity.setText("1")
         rowBinding.root.tag = product.id
 
-        product.image?.let { bytes ->
-            val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-            rowBinding.orderProductImage.setImageBitmap(bitmap)
+        product.image?.let { path ->
+            rowBinding.orderProductImage.load(path)
         }
 
         // Quantity buttons

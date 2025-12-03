@@ -27,7 +27,7 @@ class MaterialsRepo(dbHelper: DatabaseHelper) : CRUDRepo<Materials>(dbHelper)
             quantity = floor(cursor.getDouble(cursor.getColumnIndexOrThrow(MaterialsTable.QUANTITY)) * 100) / 100.0,
             unit = cursor.getString(cursor.getColumnIndexOrThrow(MaterialsTable.UNIT)),
             stockThreshold = cursor.getDouble(cursor.getColumnIndexOrThrow(MaterialsTable.LOW_STOCK_THRESHOLD)),
-            image = cursor.getBlob(cursor.getColumnIndexOrThrow(MaterialsTable.IMAGE))
+            image = cursor.getString(cursor.getColumnIndexOrThrow(MaterialsTable.IMAGE))
         )
     }
 

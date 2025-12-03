@@ -5,7 +5,7 @@ data class Materials(val id: Int?,
                      val quantity: Double?,
                      val unit: String?,
                      val stockThreshold: Double?,
-                     val image: ByteArray?
+                     val image: String?
                     ) : RowConversion
 {
     override fun toRow(): Array<Any?> =
