@@ -296,7 +296,7 @@ class ProductsActivity : BaseActivity() {
             val row = layoutMaterialsContainer.getChildAt(i)
 
             // safer retrieval of binding
-            val rowBinding = (row.tag as? MaterialRowBinding) ?: MaterialRowBinding.bind(row)
+            val rowBinding = row.getTag(R.id.tag_binding) as MaterialRowBinding
 
             val materialName = rowBinding.sAvailableMaterials.selectedItem as? String
             val quantityText = rowBinding.etMaterialQuantity.text.toString().trim()
@@ -352,15 +352,16 @@ class ProductsActivity : BaseActivity() {
         dialog.dismiss()
     }
 
-    //  Add a material row
-    private fun addMaterialRow(container: LinearLayout) {
-        // Inflate using binding
+    private fun addMaterialRow(container: LinearLayout,
+                               materialIdToSelect: Int? = null,
+                               quantity: Double? = null,
+                               productMaterialId: Int? = null
+    ) {
         val rowBinding = MaterialRowBinding.inflate(layoutInflater, container, false)
 
         // Put materials in the spinner
         lifecycleScope.launch {
             val materials = runIO { materialsRepo.getAll() }
-
 
             if (materials.isEmpty()) {
                 showCustomToast(this@ProductsActivity, "No materials available. Please add materials first.")
@@ -368,9 +369,25 @@ class ProductsActivity : BaseActivity() {
             }
 
             val materialNames = materials.map { it.name }
-            val adapter = ArrayAdapter(this@ProductsActivity, android.R.layout.simple_spinner_item, materialNames)
+            val adapter = ArrayAdapter(
+                this@ProductsActivity,
+                android.R.layout.simple_spinner_item,
+                materialNames
+            )
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             rowBinding.sAvailableMaterials.adapter = adapter
+
+            materialIdToSelect?.let { id ->
+                val index = materials.indexOfFirst { it.id == id }
+                if (index != -1) {
+                    rowBinding.sAvailableMaterials.setSelection(index)
+                    rowBinding.tvUnit.text = materials[index].unit
+                }
+            }
+
+            quantity?.let {
+                rowBinding.etMaterialQuantity.setText(it.toString())
+            }
 
             // Update unit when material selected
             rowBinding.sAvailableMaterials.onItemSelectedListener =
@@ -394,13 +411,15 @@ class ProductsActivity : BaseActivity() {
             container.removeView(rowBinding.root)
         }
 
-        // store binding in tag so save loop can read it later
-        rowBinding.root.tag = rowBinding
+        // store PM ID
+        rowBinding.root.setTag(R.id.tag_pm_id, productMaterialId)
+
+        // store Binding
+        rowBinding.root.setTag(R.id.tag_binding, rowBinding)
 
         // Add the row to the container
         container.addView(rowBinding.root)
     }
-
 
     //  Show Edit Product dialog
     private fun showEditProductDialog(product: Products? = null) {
@@ -425,7 +444,6 @@ class ProductsActivity : BaseActivity() {
             fillProductDetails(product, dialogBinding)
         }
 
-        // Image picker
         dialogBinding.ivProductImage.setOnClickListener {
             tempDialogImageView = dialogBinding.ivProductImage
 
@@ -495,27 +513,19 @@ class ProductsActivity : BaseActivity() {
         }
 
         lifecycleScope.launch {
-            val materials = runIO { materialsRepo.getAll() }
             val usedMaterials = runIO { productMaterialsRepo.getMaterialsPerProduct(product.id) }
 
-            // Now safely update UI
+            // update UI
             if (usedMaterials.isEmpty()) {
                 addMaterialRow(dialogBinding.layoutMaterialsContainer)
             } else {
                 usedMaterials.forEach { pm ->
-                    addMaterialRow(dialogBinding.layoutMaterialsContainer)
-
-                    val row = dialogBinding.layoutMaterialsContainer.getChildAt(
-                        dialogBinding.layoutMaterialsContainer.childCount - 1
+                    addMaterialRow(
+                        dialogBinding.layoutMaterialsContainer,
+                        materialIdToSelect = pm.materialId,
+                        quantity = pm.quantityRequired,
+                        productMaterialId = pm.productMaterialId
                     )
-                    val rowBinding = (row.tag as? MaterialRowBinding) ?: MaterialRowBinding.bind(row)
-
-                    rowBinding.etMaterialQuantity.setText(pm.quantityRequired.toString())
-
-                    val index = materials.indexOfFirst { it.id == pm.materialId }
-                    if (index != -1) rowBinding.sAvailableMaterials.setSelection(index)
-
-                    rowBinding.tvUnit.text = pm.materialUnit
                 }
             }
         }
@@ -527,12 +537,22 @@ class ProductsActivity : BaseActivity() {
         // 1️. Get OLD materials from DB
         val oldMaterials = runIO { productMaterialsRepo.getMaterialsPerProduct(productId) }
 
-        // 2. Gather NEW materials from the UI
-        val newMaterials = mutableListOf<ProductMaterials>()
+        val oldIds: MutableSet<Int> = try {
+            oldMaterials.map { it.productMaterialId }.toMutableSet()
+        } catch (e: Exception) {
+            mutableSetOf()
+        }
 
+        val idsInUI = mutableSetOf<Int>()
+        val toInsert = mutableListOf<ProductMaterials>()
+        val toUpdate = mutableListOf<ProductMaterials>()
+
+        val materials = runIO { materialsRepo.getAll() }
+
+        // 2. Gather NEW materials from the UI
         for (i in 0 until dialogBinding.layoutMaterialsContainer.childCount) {
             val row = dialogBinding.layoutMaterialsContainer.getChildAt(i)
-            val rowBinding = (row.tag as? MaterialRowBinding) ?: MaterialRowBinding.bind(row)
+            val rowBinding = row.getTag(R.id.tag_binding) as MaterialRowBinding
 
             val selectedName = rowBinding.sAvailableMaterials.selectedItem as String
             val qtyText = rowBinding.etMaterialQuantity.text.toString().trim()
@@ -547,54 +567,40 @@ class ProductsActivity : BaseActivity() {
 
             val qty = qtyText.toDoubleOrNull() ?: continue
 
-            val material = runIO { materialsRepo.getAll().first { it.name == selectedName } }
+            val material = materials.firstOrNull { it.name == selectedName } ?: continue
+            val materialId = material.id
 
-            newMaterials.add(
-                ProductMaterials(
-                    id = 0,
-                    productId = productId,
-                    materialId = material.id,
-                    quantityRequired = qty
+            val pmId = row.getTag(R.id.tag_pm_id) as? Int
+            if (pmId != null) {
+                // existing DB row -> update
+                idsInUI.add(pmId)
+                toUpdate.add(
+                    ProductMaterials(
+                        id = pmId,
+                        productId = productId,
+                        materialId = materialId,
+                        quantityRequired = qty
+                    )
                 )
-            )
+            } else {
+                // new row -> insert
+                toInsert.add(
+                    ProductMaterials(
+                        id = 0,
+                        productId = productId,
+                        materialId = materialId,
+                        quantityRequired = qty
+                    )
+                )
+            }
         }
 
         // 3. Compare OLD vs NEW
-        val toInsert = mutableListOf<ProductMaterials>()
-        val toUpdate = mutableListOf<ProductMaterials>()
-        val toDelete = mutableListOf<Int>()
+        val toDelete = (oldIds - idsInUI).toList()
 
-        for (newMat in newMaterials) {
-            val existing = oldMaterials.firstOrNull { it.materialId == newMat.materialId }
-
-            if (existing == null) {
-                toInsert.add(newMat)
-                continue
-            }
-            toUpdate.add(
-                ProductMaterials(
-                    id = existing.productMaterialId,
-                    productId = productId,
-                    materialId = existing.materialId,
-                    quantityRequired = newMat.quantityRequired
-                )
-            )
-        }
-
-        oldMaterials.forEach { oldMat ->
-            val matId = oldMat.materialId
-
-            val isUpdated = newMaterials.any { it.materialId == matId }
-            val isUnchanged = unchangedMaterialIds.contains(matId)
-
-            if (!isUpdated && !isUnchanged) {
-                toDelete.add(oldMat.productMaterialId)
-            }
-        }
-
-        // 4. Apply DB operations
-        toInsert.forEach { runIO{ productMaterialsRepo.insert(it) } }
-        toUpdate.forEach { runIO{ productMaterialsRepo.update(it) } }
-        toDelete.forEach { runIO{ productMaterialsRepo.deleteByProductOrMaterialId(it) } }
+        // 4) Apply DB operations (wrap each in runIO)
+        toInsert.forEach { runIO { productMaterialsRepo.insert(it) } }
+        toUpdate.forEach { runIO { productMaterialsRepo.update(it) } }
+        toDelete.forEach { id -> runIO { productMaterialsRepo.deleteColumn(id) } }
     }
 }

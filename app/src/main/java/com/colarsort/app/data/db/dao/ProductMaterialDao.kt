@@ -26,7 +26,7 @@ interface ProductMaterialDao : BaseDao<ProductMaterials>
         FROM product_material AS pm
         JOIN materials AS m ON pm.materialId = m.id
         JOIN products AS p ON pm.productId = p.id
-        WHERE p.id = :productId;
+        WHERE pm.productId = :productId;
     """)
     suspend fun getProductMaterialDetails(productId: Int) : List<ProductMaterialDetails>
 
