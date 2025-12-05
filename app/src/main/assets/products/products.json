@@ -1,0 +1,82 @@
+[
+  {
+    "name": "Blouse",
+    "image": "products/images/blouse.jpg"
+  },
+  {
+    "name": "Cap",
+    "image": "products/images/cap.jpg"
+  },
+  {
+    "name": "Coat",
+    "image": "products/images/coat.jpg"
+  },
+  {
+    "name": "Dress",
+    "image": "products/images/dress.jpg"
+  },
+  {
+    "name": "Gloves",
+    "image": "products/images/gloves.jpg"
+  },
+  {
+    "name": "Hoodie",
+    "image": "products/images/hoodie.jpg"
+  },
+  {
+    "name": "Jacket",
+    "image": "products/images/jacket.jpg"
+  },
+  {
+    "name": "Jeans",
+    "image": "products/images/jeans.jpg"
+  },
+  {
+    "name": "Overalls",
+    "image": "products/images/overalls.jpg"
+  },
+  {
+    "name": "Pants",
+    "image": "products/images/pants.jpg"
+  },
+  {
+    "name": "Polo Shirt",
+    "image": "products/images/polo_shirt.jpg"
+  },
+  {
+    "name": "Scarf",
+    "image": "products/images/scarf.jpg"
+  },
+  {
+    "name": "Shorts",
+    "image": "products/images/shorts.jpg"
+  },
+  {
+    "name": "Skirt",
+    "image": "products/images/skirt.jpg"
+  },
+  {
+    "name": "Socks",
+    "image": "products/images/socks.jpg"
+  },
+  {
+    "name": "Sweatshirt",
+    "image": "products/images/sweatshirt.jpg"
+  },
+  {
+    "name": "T-Shirt",
+    "image": "products/images/t-shirt.jpg"
+  },
+  {
+    "name": "Tank Top",
+    "image": "products/images/tank_top.jpg"
+  },
+  {
+    "name": "Tote Bag",
+    "image": "products/images/tote_bag.jpg"
+  },
+  {
+    "name": "Vest",
+    "image": "products/images/vest.jpg"
+  }
+]

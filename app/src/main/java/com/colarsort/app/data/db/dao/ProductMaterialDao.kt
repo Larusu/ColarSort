@@ -8,6 +8,9 @@ import com.colarsort.app.data.pojo.ProductMaterialDetails
 @Dao
 interface ProductMaterialDao : BaseDao<ProductMaterials>
 {
+    @Query("DELETE FROM product_material WHERE id = :id")
+    suspend fun deleteById(id : Int)
+
     @Query("SELECT * FROM product_material")
     suspend fun getAllData() : List<ProductMaterials>
 

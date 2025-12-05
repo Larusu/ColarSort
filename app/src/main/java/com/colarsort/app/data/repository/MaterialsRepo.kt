@@ -1,8 +1,12 @@
 package com.colarsort.app.data.repository
 
+import android.content.Context
 import com.colarsort.app.data.db.dao.MaterialDao
 import com.colarsort.app.data.entities.Materials
 import com.colarsort.app.data.pojo.ProductIdAndQuantity
+import com.colarsort.app.utils.UtilityHelper.compressBitmap
+import com.colarsort.app.utils.UtilityHelper.loadBitmapFromAssets
+import com.colarsort.app.utils.UtilityHelper.loadFromJson
 
 class MaterialsRepo(dao : MaterialDao) : BaseRepo<Materials, MaterialDao>(dao)
 {
@@ -52,4 +56,24 @@ class MaterialsRepo(dao : MaterialDao) : BaseRepo<Materials, MaterialDao>(dao)
 
         return insufficient
     }
+
+    suspend fun insertInitialMaterials(context: Context) {
+        val items : List<Materials> = loadFromJson(context, "materials/materials.json")
+
+        items.forEach { json ->
+            val bitmap = loadBitmapFromAssets(context, json.image!!)
+            val filePath = compressBitmap(context, bitmap)
+
+            val entity = Materials(
+                id = 0,
+                name = json.name,
+                quantity = json.quantity,
+                unit = json.unit,
+                lowStockThreshold = json.lowStockThreshold,
+                image = filePath
+            )
+            dao.insert(entity)
+        }
+    }
+
 }

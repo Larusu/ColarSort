@@ -1,0 +1,212 @@
+[
+  {
+    "name": "Buttons",
+    "quantity": 200,
+    "unit": "pcs",
+    "lowStockThreshold": 50,
+    "image": "materials/images/buttons.jpg"
+  },
+  {
+    "name": "Canvas",
+    "quantity": 30,
+    "unit": "yards",
+    "lowStockThreshold": 5,
+    "image": "materials/images/canvas.jpg"
+  },
+  {
+    "name": "Cardboard Box",
+    "quantity": 40,
+    "unit": "pcs",
+    "lowStockThreshold": 10,
+    "image": "materials/images/cardboard_box.jpg"
+  },
+  {
+    "name": "Cord",
+    "quantity": 100,
+    "unit": "meters",
+    "lowStockThreshold": 20,
+    "image": "materials/images/cord.jpg"
+  },
+  {
+    "name": "Cotton",
+    "quantity": 25,
+    "unit": "yards",
+    "lowStockThreshold": 5,
+    "image": "materials/images/cotton.jpg"
+  },
+  {
+    "name": "Elastic",
+    "quantity": 150,
+    "unit": "meters",
+    "lowStockThreshold": 30,
+    "image": "materials/images/elastic.jpg"
+  },
+  {
+    "name": "Embroidery Thread",
+    "quantity": 300,
+    "unit": "pcs",
+    "lowStockThreshold": 50,
+    "image": "materials/images/embroidery_thread.jpg"
+  },
+  {
+    "name": "Fabric",
+    "quantity": 50,
+    "unit": "yards",
+    "lowStockThreshold": 10,
+    "image": "materials/images/fabric.jpg"
+  },
+  {
+    "name": "Fabric Paint",
+    "quantity": 25,
+    "unit": "bottles",
+    "lowStockThreshold": 5,
+    "image": "materials/images/fabric_paint.jpg"
+  },
+  {
+    "name": "Fleece",
+    "quantity": 20,
+    "unit": "yards",
+    "lowStockThreshold": 5,
+    "image": "materials/images/fleece.jpg"
+  },
+  {
+    "name": "Hanger",
+    "quantity": 100,
+    "unit": "pcs",
+    "lowStockThreshold": 20,
+    "image": "materials/images/hanger.jpg"
+  },
+  {
+    "name": "Hooks & Eyes",
+    "quantity": 250,
+    "unit": "pcs",
+    "lowStockThreshold": 50,
+    "image": "materials/images/hooks_&_eyes.jpg"
+  },
+  {
+    "name": "Interfacing",
+    "quantity": 40,
+    "unit": "yards",
+    "lowStockThreshold": 10,
+    "image": "materials/images/interfacing.jpg"
+  },
+  {
+    "name": "Label",
+    "quantity": 500,
+    "unit": "pcs",
+    "lowStockThreshold": 100,
+    "image": "materials/images/label.jpg"
+  },
+  {
+    "name": "Lining",
+    "quantity": 30,
+    "unit": "yards",
+    "lowStockThreshold": 5,
+    "image": "materials/images/lining.jpg"
+  },
+  {
+    "name": "Nylon Fabric",
+    "quantity": 40,
+    "unit": "yards",
+    "lowStockThreshold": 8,
+    "image": "materials/images/nylon_fabric.jpg"
+  },
+  {
+    "name": "Padding",
+    "quantity": 20,
+    "unit": "sheets",
+    "lowStockThreshold": 5,
+    "image": "materials/images/padding.jpg"
+  },
+  {
+    "name": "Padding Foam",
+    "quantity": 15,
+    "unit": "sheets",
+    "lowStockThreshold": 3,
+    "image": "materials/images/padding_foam.jpg"
+  },
+  {
+    "name": "Polybag",
+    "quantity": 300,
+    "unit": "pcs",
+    "lowStockThreshold": 50,
+    "image": "materials/images/polybag.jpg"
+  },
+  {
+    "name": "Polyester Fabric",
+    "quantity": 35,
+    "unit": "yards",
+    "lowStockThreshold": 8,
+    "image": "materials/images/polyester_fabric.jpg"
+  },
+  {
+    "name": "Ribbing",
+    "quantity": 25,
+    "unit": "yards",
+    "lowStockThreshold": 5,
+    "image": "materials/images/ribbing.jpg"
+  },
+  {
+    "name": "Ribbon",
+    "quantity": 200,
+    "unit": "meters",
+    "lowStockThreshold": 30,
+    "image": "materials/images/ribbon.jpg"
+  },
+  {
+    "name": "Rivets",
+    "quantity": 150,
+    "unit": "pcs",
+    "lowStockThreshold": 30,
+    "image": "materials/images/rivets.jpg"
+  },
+  {
+    "name": "Snap Buttons",
+    "quantity": 150,
+    "unit": "pcs",
+    "lowStockThreshold": 30,
+    "image": "materials/images/snap_buttons.jpg"
+  },
+  {
+    "name": "Straps",
+    "quantity": 80,
+    "unit": "meters",
+    "lowStockThreshold": 15,
+    "image": "materials/images/straps.jpg"
+  },
+  {
+    "name": "Thread",
+    "quantity": 400,
+    "unit": "spools",
+    "lowStockThreshold": 80,
+    "image": "materials/images/thread.jpg"
+  },
+  {
+    "name": "Trims",
+    "quantity": 60,
+    "unit": "meters",
+    "lowStockThreshold": 10,
+    "image": "materials/images/trims.jpg"
+  },
+  {
+    "name": "Twill",
+    "quantity": 30,
+    "unit": "yards",
+    "lowStockThreshold": 5,
+    "image": "materials/images/twill.jpg"
+  },
+  {
+    "name": "Velcro",
+    "quantity": 100,
+    "unit": "meters",
+    "lowStockThreshold": 20,
+    "image": "materials/images/velcro.jpg"
+  },
+  {
+    "name": "Zipper",
+    "quantity": 120,
+    "unit": "pcs",
+    "lowStockThreshold": 25,
+    "image": "materials/images/zipper.jpg"
+  }
+]

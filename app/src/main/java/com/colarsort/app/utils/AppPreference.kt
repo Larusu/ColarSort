@@ -8,12 +8,14 @@ object AppPreference
     private const val PREF_NAME = "app_prefs"
     private const val KEY_FIRST_RUN = "first_run_done"
 
-    fun isFirstRun(context: Context): Boolean {
+    fun isFirstRun(context: Context): Boolean
+    {
         val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
         return !prefs.getBoolean(KEY_FIRST_RUN, false)
     }
 
-    fun setFirstRunDone(context: Context) {
+    fun setFirstRunDone(context: Context)
+    {
         val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
         prefs.edit { putBoolean(KEY_FIRST_RUN, true) }
     }

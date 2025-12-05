@@ -1,13 +1,18 @@
 package com.colarsort.app.data.repository
 
+import android.content.Context
 import com.colarsort.app.data.db.dao.ProductMaterialDao
 import com.colarsort.app.data.entities.ProductMaterials
 import com.colarsort.app.data.pojo.ProductMaterialDetails
+import com.colarsort.app.utils.UtilityHelper.loadFromJson
+import kotlin.collections.forEach
 
 
 class ProductMaterialsRepo(dao : ProductMaterialDao) : BaseRepo<ProductMaterials, ProductMaterialDao>(dao)
 {
     suspend fun getAll() : List<ProductMaterials> = dao.getAllData()
+
+    suspend fun deleteColumn(id: Int) = dao.deleteById(id)
 
     suspend fun getMaterialsPerProduct(productId: Int) : List<ProductMaterialDetails> =
         dao.getProductMaterialDetails(productId)
@@ -31,4 +36,19 @@ class ProductMaterialsRepo(dao : ProductMaterialDao) : BaseRepo<ProductMaterials
 
     suspend fun checkProductIfExists(productId: Int) : Boolean =
         dao.hasMaterialsForProduct(productId)
+
+    suspend fun insertInitialProductMaterials(context: Context) {
+        val fileName = "product_materials/productMaterials.json"
+        val items : List<ProductMaterials> = loadFromJson(context, fileName)
+
+        items.forEach { json ->
+            val entity = ProductMaterials(
+                id = 0,
+                productId = json.productId,
+                materialId = json.materialId,
+                quantityRequired = json.quantityRequired
+            )
+            dao.insert(entity)
+        }
+    }
 }

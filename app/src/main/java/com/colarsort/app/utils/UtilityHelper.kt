@@ -6,10 +6,15 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.widget.TextView
 import android.widget.Toast
 import com.colarsort.app.R
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.security.MessageDigest
 
@@ -85,6 +90,24 @@ object UtilityHelper {
             this.duration = duration
             this.view = layout
             show()
+        }
+    }
+
+    suspend inline fun <reified T> loadFromJson(context: Context, fileName: String): List<T>
+    {
+        return withContext(Dispatchers.IO) {
+            val jsonString = context.assets.open(fileName)
+                .bufferedReader()
+                .use { it.readText() }
+
+            val listType = object : TypeToken<List<T>>() {}.type
+            Gson().fromJson(jsonString, listType)
+        }
+    }
+
+    fun loadBitmapFromAssets(context: Context, assetPath: String): Bitmap {
+        return context.assets.open(assetPath).use { input ->
+            BitmapFactory.decodeStream(input)
         }
     }
 }
