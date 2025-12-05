@@ -6,7 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.colarsort.app.R
-import com.colarsort.app.models.Products
+import com.colarsort.app.data.entities.Products
 import android.widget.ImageView
 import android.widget.TextView
 

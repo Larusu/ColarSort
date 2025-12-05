@@ -2,36 +2,61 @@ package com.colarsort.app.activities
 
 import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.EditText
 import android.widget.PopupMenu
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.colarsort.app.R
-import com.colarsort.app.database.DatabaseHelper
-import com.colarsort.app.repository.UsersRepo
+import com.colarsort.app.data.repository.UsersRepo
 import com.colarsort.app.session.SessionManager
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
 import com.google.android.material.button.MaterialButton
 import androidx.core.graphics.drawable.toDrawable
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.colarsort.app.adapters.UserAdapter
+import com.colarsort.app.data.repository.RepositoryProvider
 import com.colarsort.app.databinding.DialogViewWorkersBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
+@Suppress("DEPRECATION")
 open class BaseActivity : AppCompatActivity() {
 
     protected lateinit var sessionManager : SessionManager
-    protected lateinit var dbHelper : DatabaseHelper
     protected lateinit var usersRepo: UsersRepo
+
+    protected var onImagePicked: ((Uri?) -> Unit)? = null
+
+    protected val imagePickerLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val uri = result.data?.data
+
+                // call child activity callback
+                onImagePicked?.invoke(uri)
+
+                @Suppress("DEPRECATION")
+                overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
+            }
+        }
+
+    protected fun openImagePicker() {
+        val intent = Intent(Intent.ACTION_PICK).apply { type = "image/*" }
+        imagePickerLauncher.launch(intent)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         sessionManager = SessionManager(this)
-        dbHelper = DatabaseHelper(this)
-        usersRepo = UsersRepo(dbHelper)
+        usersRepo = RepositoryProvider.usersRepo
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -45,6 +70,14 @@ open class BaseActivity : AppCompatActivity() {
         overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
     }
 
+    @Deprecated("This method has been deprecated in favor of using the Activity Result API\n      " +
+            "which brings increased type safety via an {@link ActivityResultContract} and the prebuilt\n      " +
+            "contracts for common intents available in\n      " +
+            "{@link androidx.activity.result.contract.ActivityResultContracts}, provides hooks for\n      " +
+            "testing, and allow receiving results in separate, testable classes independent from your\n      " +
+            "activity. Use\n      " +
+            "{@link #registerForActivityResult(ActivityResultContract, ActivityResultCallback)}\n      " +
+            "passing in a {@link StartActivityForResult} object for the {@link ActivityResultContract}.")
     override fun startActivityForResult(intent: Intent, requestCode: Int) {
         super.startActivityForResult(intent, requestCode)
         overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
@@ -58,6 +91,10 @@ open class BaseActivity : AppCompatActivity() {
     override fun startActivity(intent: Intent, options: Bundle?) {
         super.startActivity(intent, options)
         overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
+    }
+
+    suspend fun <T> runIO(ioBlock: suspend () -> T): T {
+        return withContext(Dispatchers.IO) { ioBlock() }
     }
 
     protected fun showPopupMenu(view: View) {
@@ -95,12 +132,14 @@ open class BaseActivity : AppCompatActivity() {
                                     return@setOnClickListener
                                 }
 
-                                val success = usersRepo.assignWorker(name, password)
-                                if (success) {
-                                    showCustomToast(this, "Worker added successfully")
-                                    dialog.dismiss()
-                                } else {
-                                    showCustomToast(this, "Failed to add worker")
+                                lifecycleScope.launch {
+                                    val success = usersRepo.assignWorker(name, password)
+                                    if (success) {
+                                        showCustomToast(this@BaseActivity, "Worker added successfully")
+                                        dialog.dismiss()
+                                    } else {
+                                        showCustomToast(this@BaseActivity, "Failed to add worker")
+                                    }
                                 }
                             }
                         }
@@ -109,22 +148,24 @@ open class BaseActivity : AppCompatActivity() {
 
                             val dialogBinding = DialogViewWorkersBinding.inflate(layoutInflater)
 
-                            val users = ArrayList(usersRepo.getAll())
+                            lifecycleScope.launch{
+                               val users = usersRepo.getAll()
+                                // Setup RecyclerView
+                                dialogBinding.rvViewWorkers.adapter = UserAdapter(ArrayList(users), usersRepo, lifecycleScope)
+                                dialogBinding.rvViewWorkers.layoutManager =
+                                    LinearLayoutManager(this@BaseActivity)
 
-                            // Setup RecyclerView
-                            dialogBinding.rvViewWorkers.adapter = UserAdapter(users, usersRepo)
-                            dialogBinding.rvViewWorkers.layoutManager = LinearLayoutManager(this)
+                                val dialog = AlertDialog.Builder(this@BaseActivity)
+                                    .setView(dialogBinding.root)
+                                    .setCancelable(true)
+                                    .create()
 
-                            val dialog = AlertDialog.Builder(this)
-                                .setView(dialogBinding.root)
-                                .setCancelable(true)
-                                .create()
+                                dialog.window?.setBackgroundDrawable(
+                                    Color.TRANSPARENT.toDrawable()
+                                )
 
-                            dialog.window?.setBackgroundDrawable(
-                                Color.TRANSPARENT.toDrawable()
-                            )
-
-                            dialog.show()
+                                dialog.show()
+                            }
                         }
 
                         R.id.log_out -> showLogoutDialog()

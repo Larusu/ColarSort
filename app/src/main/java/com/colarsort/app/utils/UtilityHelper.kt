@@ -1,5 +1,8 @@
+@file:Suppress("DEPRECATION")
+
 package com.colarsort.app.utils
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
@@ -62,6 +65,7 @@ object UtilityHelper {
      * @param textColor Color resource ID for text (default: white)
      * @param textSizeSp Text size in sp (default: 14f)
      */
+    @SuppressLint("InflateParams")
     fun showCustomToast(
         activity: Activity,
         message: String,

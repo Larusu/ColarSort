@@ -6,17 +6,20 @@ import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.colarsort.app.R
 import com.colarsort.app.adapters.ProductionStatusAdapter
+import com.colarsort.app.data.pojo.ProductionStatusDisplay
 import com.colarsort.app.databinding.ActivityProductionStatusBinding
-import com.colarsort.app.repository.OrderItemsRepo
-import com.colarsort.app.repository.OrdersRepo
-import com.colarsort.app.repository.ProductionStatusDisplay
-import com.colarsort.app.repository.ProductionStatusRepo
-import com.colarsort.app.repository.ProductsRepo
+import com.colarsort.app.data.repository.OrderItemsRepo
+import com.colarsort.app.data.repository.OrdersRepo
+import com.colarsort.app.data.repository.ProductionStatusRepo
+import com.colarsort.app.data.repository.ProductsRepo
+import com.colarsort.app.data.repository.RepositoryProvider
 import com.colarsort.app.utils.RecyclerUtils
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
+import kotlinx.coroutines.launch
 
 class ProductionStatusActivity : BaseActivity() {
 
@@ -32,10 +35,10 @@ class ProductionStatusActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        productionStatusRepo = ProductionStatusRepo(dbHelper)
-        orderItemsRepo = OrderItemsRepo(dbHelper)
-        productsRepo = ProductsRepo(dbHelper)
-        ordersRepo = OrdersRepo(dbHelper)
+        productionStatusRepo = RepositoryProvider.productionStatusRepo
+        orderItemsRepo = RepositoryProvider.orderItemRepo
+        productsRepo = RepositoryProvider.productsRepo
+        ordersRepo = RepositoryProvider.ordersRepo
 
         // Set up view binding
         binding = ActivityProductionStatusBinding.inflate(layoutInflater)
@@ -49,33 +52,35 @@ class ProductionStatusActivity : BaseActivity() {
         }
 
         // Set up RecyclerView
-        adapter = ProductionStatusAdapter(productionStatusList, productionStatusRepo, ordersRepo)
+        adapter = ProductionStatusAdapter(productionStatusList, productionStatusRepo, ordersRepo, lifecycleScope)
         binding.rvOrdersStatus.layoutManager = LinearLayoutManager(this)
         binding.rvOrdersStatus.adapter = adapter
 
         // Load data into the list
-        val statuses = productionStatusRepo.getAll()
-        val displayItems = statuses.mapNotNull { status ->
-            val orderItem = orderItemsRepo.getById(status.orderItemId ?: return@mapNotNull null)
-            val product = productsRepo.getById(orderItem?.productId ?: return@mapNotNull null)
+        lifecycleScope.launch {
+            val statuses = productionStatusRepo.getAll()
+            val displayItems = statuses.map { status ->
+                val orderItem = orderItemsRepo.getById(status.orderItemId)
+                val product = runIO { productsRepo.getById(orderItem?.productId ?: return@runIO null) }
 
-            ProductionStatusDisplay(
-                productionStatusId = status.id ?: return@mapNotNull null,
-                productName = product?.name ?: "Unknown Product",
-                orderId = orderItem.orderId ?: 0,
-                orderItemId = orderItem.id ?: 0,
-                orderItemsQuantity = orderItem.quantity ?: 0,
-                cuttingStatus = status.cuttingStatus == 1,
-                stitchingStatus = status.stitchingStatus == 1,
-                embroideryStatus = status.embroideryStatus == 1,
-                finishingStatus = status.finishingStatus == 1
-            )
+                ProductionStatusDisplay(
+                    productionStatusId = status.id,
+                    productName = product?.name ?: "Unknown Product",
+                    orderId = orderItem!!.orderId,
+                    orderItemId = orderItem.id,
+                    orderItemsQuantity = orderItem.quantity,
+                    cuttingStatus = status.cuttingStatus == 1,
+                    stitchingStatus = status.stitchingStatus == 1,
+                    embroideryStatus = status.embroideryStatus == 1,
+                    finishingStatus = status.finishingStatus == 1
+                )
+            }
+
+
+            // Load into the adapter using RecyclerUtils
+            RecyclerUtils.initialize(productionStatusList, displayItems, adapter)
+            updateEmptyView()
         }
-
-        // Load into the adapter using RecyclerUtils
-        RecyclerUtils.initialize(productionStatusList, displayItems, adapter)
-        updateEmptyView()
-
 
         // Navigation click listeners
         binding.ivHome.setOnClickListener {

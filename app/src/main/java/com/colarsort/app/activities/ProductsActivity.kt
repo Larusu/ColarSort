@@ -19,6 +19,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import coil.load
 import com.colarsort.app.R
@@ -26,16 +27,18 @@ import com.colarsort.app.adapters.ProductAdapter
 import com.colarsort.app.databinding.ActivityProductsBinding
 import com.colarsort.app.databinding.DialogAddProductBinding
 import com.colarsort.app.databinding.MaterialRowBinding
-import com.colarsort.app.models.ProductMaterials
-import com.colarsort.app.models.Products
-import com.colarsort.app.repository.MaterialsRepo
-import com.colarsort.app.repository.OrderItemsRepo
-import com.colarsort.app.repository.ProductMaterialsRepo
-import com.colarsort.app.repository.ProductsRepo
+import com.colarsort.app.data.entities.ProductMaterials
+import com.colarsort.app.data.entities.Products
+import com.colarsort.app.data.repository.MaterialsRepo
+import com.colarsort.app.data.repository.ProductMaterialsRepo
+import com.colarsort.app.data.repository.ProductsRepo
+import com.colarsort.app.data.repository.RepositoryProvider
 import com.colarsort.app.utils.RecyclerUtils
 import com.colarsort.app.utils.UtilityHelper.compressBitmap
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
+import kotlinx.coroutines.launch
 
+@Suppress("DEPRECATION")
 class ProductsActivity : BaseActivity() {
 
     private lateinit var binding: ActivityProductsBinding
@@ -43,19 +46,17 @@ class ProductsActivity : BaseActivity() {
     private lateinit var productsRepo: ProductsRepo
     private lateinit var materialsRepo: MaterialsRepo
     private lateinit var productMaterialsRepo: ProductMaterialsRepo
-    private lateinit var orderItemsRepo: OrderItemsRepo
     private val productList = ArrayList<Products>()
     private var tempDialogImageView: ImageView? = null
-    private var selectedImageBytes: String? = null
+    private var selectedImage: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        productsRepo = ProductsRepo(dbHelper)
-        materialsRepo = MaterialsRepo(dbHelper)
-        productMaterialsRepo = ProductMaterialsRepo(dbHelper)
-        orderItemsRepo = OrderItemsRepo(dbHelper)
+        productsRepo = RepositoryProvider.productsRepo
+        materialsRepo = RepositoryProvider.materialsRepo
+        productMaterialsRepo = RepositoryProvider.productMaterialsRepo
 
         // Setup view binding
         binding = ActivityProductsBinding.inflate(layoutInflater)
@@ -74,10 +75,12 @@ class ProductsActivity : BaseActivity() {
         binding.recyclerViewProducts.adapter = adapter
 
         // Load data from database
-        val existingSize = productList.size
-        val newItems = productsRepo.getAll()
-        productList.addAll(newItems)
-        adapter.notifyItemRangeInserted(existingSize, newItems.size)
+        lifecycleScope.launch {
+            val existingSize = productList.size
+            val newItems = runIO { productsRepo.getAll() }
+            productList.addAll(newItems)
+            adapter.notifyItemRangeInserted(existingSize, newItems.size)
+        }
 
         // Navigation click listeners
         binding.ivHome.setOnClickListener {
@@ -110,14 +113,16 @@ class ProductsActivity : BaseActivity() {
         binding.ivSearch.setOnClickListener {
             val strSearch = binding.etSearchField.text.toString().trim()
 
-            val newList = if (strSearch.isEmpty()) {
-                productsRepo.getAll()
-            } else {
-                productsRepo.searchProductBaseOnName(strSearch)
+            lifecycleScope.launch {
+                val newList = if (strSearch.isEmpty()) {
+                    runIO { productsRepo.getAll() }
+                } else {
+                    runIO { productsRepo.searchProductBaseOnName(strSearch) }
+                }
+                adapter = ProductAdapter(ArrayList(newList))
+                binding.recyclerViewProducts.layoutManager = GridLayoutManager(this@ProductsActivity, 3)
+                binding.recyclerViewProducts.adapter = adapter
             }
-            adapter = ProductAdapter(ArrayList(newList))
-            binding.recyclerViewProducts.layoutManager = GridLayoutManager(this, 3)
-            binding.recyclerViewProducts.adapter = adapter
         }
 
         when(sessionManager.getRole())
@@ -145,19 +150,21 @@ class ProductsActivity : BaseActivity() {
                 MediaStore.Images.Media.getBitmap(contentResolver, uri)
             }
             tempDialogImageView?.setImageBitmap(bitmap)
-            selectedImageBytes = compressBitmap(this, bitmap)
+            selectedImage = compressBitmap(this, bitmap)
         }
     }
 
     private fun handleManagerSession()
     {
         binding.btnAdd.setOnClickListener {
-            if(materialsRepo.getAll().isEmpty())
-            {
-                showCustomToast(this, "No materials found. Add a material first to continue")
-                return@setOnClickListener
+            lifecycleScope.launch {
+                if (runIO{ materialsRepo.getAll().isEmpty() }) {
+                    showCustomToast(this@ProductsActivity, "No materials found. Add a material first to continue")
+                    return@launch
+                }
+                showAddProductDialog()
             }
-            showAddProductDialog()
+            return@setOnClickListener
         }
 
         // Adapter item_more click listener
@@ -178,44 +185,49 @@ class ProductsActivity : BaseActivity() {
         }
 
         if(menuItemId == R.id.delete_product) {
+            lifecycleScope.launch {
+                if (runIO{productMaterialsRepo.isProductUsedInAnyOrder(product.id)}) {
+                    showCustomToast(this@ProductsActivity, "Cannot delete product with active orders")
+                    return@launch
+                }
+                AlertDialog.Builder(this@ProductsActivity)
+                    .setTitle("Delete Product")
+                    .setMessage("Are you sure you want to delete this product?")
+                    .setPositiveButton("Yes") { _, _ ->
+                    lifecycleScope.launch {
+                        // Delete related product materials
+                        runIO { productMaterialsRepo.deleteByProductOrMaterialId(product.id) }
 
-            if (orderItemsRepo.hasOrdersForProduct(product.id!!)) {
-                showCustomToast(this, "Cannot delete product with active orders")
-                return true
-            }
+                        // Delete product itself
+                        val successful = runIO { productsRepo.deleteById(product.id) }
+                        if (!successful) {
+                            showCustomToast(this@ProductsActivity, "Delete failed")
+                            return@launch
+                        }
 
-            AlertDialog.Builder(this)
-                .setTitle("Delete Product")
-                .setMessage("Are you sure you want to delete this product?")
-                .setPositiveButton("Yes") { _, _ ->
+                        // Update UI
+                        val position = productList.indexOf(product)
+                        if (position != -1) {
+                            RecyclerUtils.deleteAt(productList, position, adapter)
+                        }
 
-                    productMaterialsRepo.deleteById(product.id)
-
-                    val successful = productsRepo.deleteColumn(product.id)
-                    if (!successful) {
-                        showCustomToast(this, "Delete failed")
-                        return@setPositiveButton
+                        showCustomToast(this@ProductsActivity, "Product deleted successfully")
                     }
-
-                    val position = productList.indexOf(product)
-                    RecyclerUtils.deleteAt(productList, position, adapter)
-                    showCustomToast(this, "Material deleted successfully")
-
                 }
                 .setNegativeButton("No") { dialog, _ ->
                     dialog.dismiss()
                 }
                 .show()
-
+            }
             return true
         }
 
-        return true
+        return false
     }
 
     // Show Add Product dialog
     private fun showAddProductDialog() {
-        selectedImageBytes = null
+        selectedImage = null
 
         val dialogBinding = DialogAddProductBinding.inflate(layoutInflater)
 
@@ -236,19 +248,25 @@ class ProductsActivity : BaseActivity() {
         // Image picker
         dialogBinding.ivProductImage.setOnClickListener {
             tempDialogImageView = dialogBinding.ivProductImage
-            val intent = Intent(Intent.ACTION_PICK)
-            intent.type = "image/*"
-            startActivityForResult(intent, 1001)
+
+            onImagePicked = { uri ->
+                tempDialogImageView?.setImageURI(uri)
+                val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
+                selectedImage = compressBitmap(this, bitmap)
+            }
+            openImagePicker()
         }
 
         // Save button
         dialogBinding.tvSave.setOnClickListener {
-            handleSaveButton(
-                dialogBinding = dialogBinding,
-                layoutMaterialsContainer = dialogBinding.layoutMaterialsContainer,
-                dialog = dialog,
-                selectedImageBytes = selectedImageBytes
-            )
+            lifecycleScope.launch {
+                handleSaveButton(
+                    dialogBinding = dialogBinding,
+                    layoutMaterialsContainer = dialogBinding.layoutMaterialsContainer,
+                    dialog = dialog,
+                    selectedImageBytes = selectedImage
+                )
+            }
         }
 
         // Cancel button
@@ -257,7 +275,7 @@ class ProductsActivity : BaseActivity() {
         dialog.show()
     }
 
-    private fun handleSaveButton(
+    private suspend fun handleSaveButton(
         dialogBinding: DialogAddProductBinding,
         layoutMaterialsContainer: LinearLayout,
         dialog: Dialog,
@@ -295,39 +313,40 @@ class ProductsActivity : BaseActivity() {
             }
 
             // Get materialId from the repository
-            val material = materialsRepo.getAll().firstOrNull { it.name == materialName }
-            if (material == null) {
+            val material = runIO { materialsRepo.getAll().firstOrNull { it.name == materialName } }
+
+            if (material?.id == null) {
                 showCustomToast(this, "Material $materialName not found")
                 return
             }
 
-            selectedMaterials.add(material.id!! to quantity)
+            selectedMaterials.add(material.id to quantity)
         }
 
         // Check for duplicate materials
         val duplicates = selectedMaterials.map { it.first }.groupingBy { it }.eachCount().filter { it.value > 1 }.keys
         if (duplicates.isNotEmpty()) {
-            val duplicateNames = duplicates.mapNotNull { id -> materialsRepo.getAll().firstOrNull { it.id == id }?.name }
+            val duplicateNames = duplicates.mapNotNull { id -> runIO{ materialsRepo.getAll().firstOrNull { it.id == id }?.name } }
             showCustomToast(this, "Duplicate materials found: ${duplicateNames.joinToString()}")
             return
         }
 
         // Insert the product first
-        val product = Products(null, name, selectedImageBytes)
-        productsRepo.insert(product)
+        val product = Products(id = 0, name, selectedImageBytes)
+        runIO { productsRepo.insert(product) }
 
         // Get the last inserted product ID
-        val productId = productsRepo.getLastInsertedId()
+        val productId = runIO { productsRepo.getLastInsertedId() }
 
         // Insert into ProductMaterials table
         selectedMaterials.forEach { (materialId, quantityRequired) ->
             val productMaterial =
-                ProductMaterials(null, productId, materialId, quantityRequired)
-            productMaterialsRepo.insert(productMaterial)
+                ProductMaterials(id = 0, productId, materialId, quantityRequired)
+            runIO { productMaterialsRepo.insert(productMaterial) }
         }
 
         showCustomToast(this, "Product added successfully")
-        RecyclerUtils.insertedItems(productList, productsRepo.getAll(), adapter)
+        RecyclerUtils.insertedItems(productList, runIO { productsRepo.getAll() }, adapter)
 
         tempDialogImageView = null
         dialog.dismiss()
@@ -339,25 +358,35 @@ class ProductsActivity : BaseActivity() {
         val rowBinding = MaterialRowBinding.inflate(layoutInflater, container, false)
 
         // Put materials in the spinner
-        val materials = materialsRepo.getAll()
+        lifecycleScope.launch {
+            val materials = runIO { materialsRepo.getAll() }
 
-        if (materials.isEmpty()) {
-            showCustomToast(this, "No materials available. Please add materials first.")
-            return
-        }
 
-        val materialNames = materials.map { it.name ?: "Unknown" }
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, materialNames)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        rowBinding.sAvailableMaterials.adapter = adapter
-
-        // Update unit when material selected
-        rowBinding.sAvailableMaterials.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                (view as? TextView)?.setTextColor(Color.WHITE) // Selected text white
-                rowBinding.tvUnit.text = materials[position].unit
+            if (materials.isEmpty()) {
+                showCustomToast(this@ProductsActivity, "No materials available. Please add materials first.")
+                return@launch
             }
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
+
+            val materialNames = materials.map { it.name }
+            val adapter = ArrayAdapter(this@ProductsActivity, android.R.layout.simple_spinner_item, materialNames)
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            rowBinding.sAvailableMaterials.adapter = adapter
+
+            // Update unit when material selected
+            rowBinding.sAvailableMaterials.onItemSelectedListener =
+                object : AdapterView.OnItemSelectedListener {
+                    override fun onItemSelected(
+                        parent: AdapterView<*>,
+                        view: View?,
+                        position: Int,
+                        id: Long
+                    ) {
+                        (view as? TextView)?.setTextColor(Color.WHITE) // Selected text white
+                        rowBinding.tvUnit.text = materials[position].unit
+                    }
+
+                    override fun onNothingSelected(parent: AdapterView<*>?) {}
+                }
         }
 
         // Remove row
@@ -375,7 +404,7 @@ class ProductsActivity : BaseActivity() {
 
     //  Show Edit Product dialog
     private fun showEditProductDialog(product: Products? = null) {
-        selectedImageBytes = product?.image
+        selectedImage = product?.image
 
         // Inflate using binding
         val dialogBinding = DialogAddProductBinding.inflate(layoutInflater)
@@ -399,9 +428,13 @@ class ProductsActivity : BaseActivity() {
         // Image picker
         dialogBinding.ivProductImage.setOnClickListener {
             tempDialogImageView = dialogBinding.ivProductImage
-            val intent = Intent(Intent.ACTION_PICK)
-            intent.type = "image/*"
-            startActivityForResult(intent, 1001)
+
+            onImagePicked = { uri ->
+                tempDialogImageView?.setImageURI(uri)
+                val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
+                selectedImage = compressBitmap(this, bitmap)
+            }
+            openImagePicker()
         }
 
         // "+" button adds material rows
@@ -417,30 +450,32 @@ class ProductsActivity : BaseActivity() {
                 return@setOnClickListener
             }
 
-            // Add Mode
-            if (product == null) {
-                productsRepo.insert(Products(null, name, selectedImageBytes))
-                showCustomToast(this, "Product added successfully")
-                return@setOnClickListener
+            lifecycleScope.launch {
+                // Add Mode
+                if (product == null) {
+                    runIO { productsRepo.insert(Products(id = 0, name, selectedImage)) }
+                    showCustomToast(this@ProductsActivity, "Product added successfully")
+                    return@launch
+                }
+
+                // Update Mode
+                val updated = product.copy(name = name, image = selectedImage ?: product.image)
+                val success = runIO { productsRepo.update(updated) }
+
+                if (!success) {
+                    showCustomToast(this@ProductsActivity, "Update failed")
+                    return@launch
+                }
+
+                RecyclerUtils.updateItem(productList, updated, adapter) { it.id }
+                showCustomToast(this@ProductsActivity, "Product updated successfully")
+
+                // Update product materials
+                syncProductMaterials(product.id, dialogBinding)
+
+                tempDialogImageView = null
+                dialog.dismiss()
             }
-
-            // Update Mode
-            val updated = product.copy(name = name, image = selectedImageBytes ?: product.image)
-            val success = productsRepo.update(updated)
-
-            if(!success)
-            {
-                showCustomToast(this, "Update failed")
-                return@setOnClickListener
-            }
-
-            RecyclerUtils.updateItem(productList, updated, adapter) { it.id }
-            showCustomToast(this, "Product updated successfully")
-
-            syncProductMaterials(product.id!!, dialogBinding)
-
-            tempDialogImageView = null
-            dialog.dismiss()
         }
 
         // Cancel button
@@ -459,36 +494,38 @@ class ProductsActivity : BaseActivity() {
             dialogBinding.ivProductImage.load(path)
         }
 
-        val usedMaterials = productMaterialsRepo.getMaterialsPerProduct(product.id!!)
+        lifecycleScope.launch {
+            val materials = runIO { materialsRepo.getAll() }
+            val usedMaterials = runIO { productMaterialsRepo.getMaterialsPerProduct(product.id) }
 
-        if (usedMaterials.isEmpty()) {
-            addMaterialRow(dialogBinding.layoutMaterialsContainer)
-            return
-        }
+            // Now safely update UI
+            if (usedMaterials.isEmpty()) {
+                addMaterialRow(dialogBinding.layoutMaterialsContainer)
+            } else {
+                usedMaterials.forEach { pm ->
+                    addMaterialRow(dialogBinding.layoutMaterialsContainer)
 
-        usedMaterials.forEach { pm ->
-            addMaterialRow(dialogBinding.layoutMaterialsContainer)
+                    val row = dialogBinding.layoutMaterialsContainer.getChildAt(
+                        dialogBinding.layoutMaterialsContainer.childCount - 1
+                    )
+                    val rowBinding = (row.tag as? MaterialRowBinding) ?: MaterialRowBinding.bind(row)
 
-            val row = dialogBinding.layoutMaterialsContainer.getChildAt(
-                dialogBinding.layoutMaterialsContainer.childCount - 1
-            )
-            val rowBinding = (row.tag as? MaterialRowBinding) ?: MaterialRowBinding.bind(row)
+                    rowBinding.etMaterialQuantity.setText(pm.quantityRequired.toString())
 
-            rowBinding.etMaterialQuantity.setText(pm.quantityRequired.toString())
+                    val index = materials.indexOfFirst { it.id == pm.materialId }
+                    if (index != -1) rowBinding.sAvailableMaterials.setSelection(index)
 
-            val materials = materialsRepo.getAll()
-            val index = materials.indexOfFirst { it.id == pm.materialId }
-            if (index != -1) rowBinding.sAvailableMaterials.setSelection(index)
-
-            rowBinding.tvUnit.text = pm.materialUnit
+                    rowBinding.tvUnit.text = pm.materialUnit
+                }
+            }
         }
     }
 
-    private fun syncProductMaterials(productId: Int, dialogBinding: DialogAddProductBinding) {
+    private suspend fun syncProductMaterials(productId: Int, dialogBinding: DialogAddProductBinding) {
         val unchangedMaterialIds = mutableSetOf<Int>()
 
         // 1️. Get OLD materials from DB
-        val oldMaterials = productMaterialsRepo.getMaterialsPerProduct(productId)
+        val oldMaterials = runIO { productMaterialsRepo.getMaterialsPerProduct(productId) }
 
         // 2. Gather NEW materials from the UI
         val newMaterials = mutableListOf<ProductMaterials>()
@@ -503,18 +540,18 @@ class ProductsActivity : BaseActivity() {
             if (qtyText.isEmpty()) return
 
             if (qtyText.isEmpty() || qtyText == "0") {
-                val material = materialsRepo.getAll().first { it.name == selectedName }
-                unchangedMaterialIds.add(material.id!!)
+                val material = runIO { materialsRepo.getAll().first { it.name == selectedName } }
+                unchangedMaterialIds.add(material.id)
                 continue
             }
 
             val qty = qtyText.toDoubleOrNull() ?: continue
 
-            val material = materialsRepo.getAll().first { it.name == selectedName }
+            val material = runIO { materialsRepo.getAll().first { it.name == selectedName } }
 
             newMaterials.add(
                 ProductMaterials(
-                    id = null,
+                    id = 0,
                     productId = productId,
                     materialId = material.id,
                     quantityRequired = qty
@@ -556,8 +593,8 @@ class ProductsActivity : BaseActivity() {
         }
 
         // 4. Apply DB operations
-        toInsert.forEach { productMaterialsRepo.insert(it) }
-        toUpdate.forEach { productMaterialsRepo.update(it) }
-        toDelete.forEach { productMaterialsRepo.deleteColumn(it) }
+        toInsert.forEach { runIO{ productMaterialsRepo.insert(it) } }
+        toUpdate.forEach { runIO{ productMaterialsRepo.update(it) } }
+        toDelete.forEach { runIO{ productMaterialsRepo.deleteByProductOrMaterialId(it) } }
     }
 }

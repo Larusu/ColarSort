@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.colarsort.app.R
-import com.colarsort.app.models.Materials
+import com.colarsort.app.data.entities.Materials
 import android.widget.ImageView
 import androidx.cardview.widget.CardView
 import androidx.core.graphics.toColorInt
@@ -31,18 +31,18 @@ class MaterialAdapter(private val materials: ArrayList<Materials>,
         val itemMore: ImageView = itemView.findViewById(R.id.iv_more)
 
         fun bind(material: Materials) {
-            if (material.image != null) {
+            if (!material.image.isNullOrEmpty()) {
                 val bitmap = BitmapFactory.decodeFile(material.image)
                 materialImg.setImageBitmap(bitmap)
             } else {
-                materialImg.setImageResource(R.drawable.default_img) // fallback image
+                materialImg.setImageResource(R.drawable.default_img)
             }
             materialId.text = material.id.toString()
             materialName.text = material.name
             materialUnit.text = material.unit
             materialQuantity.text = material.quantity.toString()
 
-            val lowStock = material.quantity!! <= material.stockThreshold!!
+            val lowStock = material.quantity <= material.lowStockThreshold
 
             if (lowStock) {
                 itemView.findViewById<CardView>(R.id.material_card).setCardBackgroundColor("#9a0002".toColorInt())
@@ -73,5 +73,4 @@ class MaterialAdapter(private val materials: ArrayList<Materials>,
     override fun getItemCount(): Int {
         return materials.size
     }
-
 }

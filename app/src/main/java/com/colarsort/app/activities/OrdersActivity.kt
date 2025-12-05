@@ -15,24 +15,26 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.colarsort.app.R
 import com.colarsort.app.adapters.ProductAdapter
 import com.colarsort.app.databinding.ActivityOrdersBinding
-import com.colarsort.app.models.Products
-import com.colarsort.app.repository.OrdersRepo
-import com.colarsort.app.repository.ProductsRepo
+import com.colarsort.app.data.entities.Products
+import com.colarsort.app.data.repository.OrdersRepo
+import com.colarsort.app.data.repository.ProductsRepo
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
 import androidx.core.view.isEmpty
 import com.colarsort.app.databinding.OrderRowBinding
 import com.colarsort.app.databinding.OrdersDialogAddProductBinding
-import com.colarsort.app.models.OrderItems
-import com.colarsort.app.models.Orders
-import com.colarsort.app.models.ProductionStatus
-import com.colarsort.app.repository.MaterialsRepo
-import com.colarsort.app.repository.OrderItemsRepo
-import com.colarsort.app.repository.ProductMaterialsRepo
-import com.colarsort.app.repository.ProductionStatusRepo
+import com.colarsort.app.data.entities.OrderItems
+import com.colarsort.app.data.entities.Orders
+import com.colarsort.app.data.entities.ProductionStatus
+import com.colarsort.app.data.repository.OrderItemsRepo
+import com.colarsort.app.data.repository.ProductionStatusRepo
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.gson.Gson
 import androidx.core.content.edit
+import androidx.lifecycle.lifecycleScope
 import coil.load
+import com.colarsort.app.data.pojo.ProductIdAndQuantity
+import com.colarsort.app.data.repository.RepositoryProvider
+import kotlinx.coroutines.launch
 
 class OrdersActivity : BaseActivity() {
 
@@ -46,15 +48,15 @@ class OrdersActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        ordersRepo = OrdersRepo(dbHelper)
-        productsRepo = ProductsRepo(dbHelper)
-        orderItemsRepo = OrderItemsRepo(dbHelper)
-        productionStatusRepo = ProductionStatusRepo(dbHelper)
+        ordersRepo = RepositoryProvider.ordersRepo
+        productsRepo = RepositoryProvider.productsRepo
+        orderItemsRepo = RepositoryProvider.orderItemRepo
+        productionStatusRepo = RepositoryProvider.productionStatusRepo
 
         // Setup view binding
         binding = ActivityOrdersBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        restoreTempOrder()
+        lifecycleScope.launch { restoreTempOrder() }
 
         // Apply system window insets
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
@@ -94,7 +96,7 @@ class OrdersActivity : BaseActivity() {
         binding.orderMenu.setOnClickListener { view -> showPopupMenu(view) }
 
         binding.tvAddProductRow.setOnClickListener {
-            showAddProductDialog()
+            lifecycleScope.launch { showAddProductDialog() }
         }
 
         binding.tvClearOrderList.setOnClickListener {
@@ -130,7 +132,7 @@ class OrdersActivity : BaseActivity() {
                 .setTitle("Confirm Order")
                 .setMessage("Are you sure you want to confirm the order?")
                 .setPositiveButton("Yes") { _, _ ->
-                    saveButton()
+                    lifecycleScope.launch { saveButton() }
                 }
                 .setNegativeButton("No") { dialog, _ -> dialog.dismiss() }
                 .show()
@@ -138,7 +140,7 @@ class OrdersActivity : BaseActivity() {
     }
 
     // Add Product Dialog
-    private fun showAddProductDialog() {
+    private suspend fun showAddProductDialog() {
         // Use ViewBinding for the dialog
         val dialogBinding = OrdersDialogAddProductBinding.inflate(layoutInflater)
         val dialog = AlertDialog.Builder(this)
@@ -147,7 +149,7 @@ class OrdersActivity : BaseActivity() {
             .create()
 
         // Setup RecyclerView with grid 3 columns
-        val products = ArrayList(productsRepo.getAll())
+        val products = ArrayList(runIO{ productsRepo.getAll() })
         val adapter = ProductAdapter(products)
         dialogBinding.recyclerViewProducts.layoutManager = GridLayoutManager(this, 3)
         dialogBinding.recyclerViewProducts.adapter = adapter
@@ -174,7 +176,7 @@ class OrdersActivity : BaseActivity() {
         dialog.show()
     }
 
-    private fun saveButton()
+    private suspend fun saveButton()
     {
         val container = binding.layoutMaterialsContainer
         val customerName = binding.etCustomerName.text.toString().trim()
@@ -189,10 +191,10 @@ class OrdersActivity : BaseActivity() {
             return
         }
 
-        val materialRepo = MaterialsRepo(dbHelper)
+        val materialRepo = RepositoryProvider.materialsRepo
 
         // Collect all rows as (productId, quantity)
-        val itemMaterials = mutableListOf<Pair<Int, Int>>()
+        val itemMaterials = mutableListOf<ProductIdAndQuantity>()
 
         // Validate stock
         for (i in 0 until container.childCount)
@@ -205,7 +207,7 @@ class OrdersActivity : BaseActivity() {
                 showCustomToast(this, "Missing product id in row ${i + 1} — skipping")
                 return
             }
-            val productMaterialsRepo = ProductMaterialsRepo(dbHelper)
+            val productMaterialsRepo = RepositoryProvider.productMaterialsRepo
             val hasMaterials = productMaterialsRepo.checkProductIfExists(productId)
 
             if(!hasMaterials) {
@@ -219,7 +221,7 @@ class OrdersActivity : BaseActivity() {
                 return
             }
 
-            itemMaterials.add(productId to quantity)
+            itemMaterials.add(ProductIdAndQuantity(productId, quantity))
         }
 
         val insufficientMaterials = materialRepo.checkMaterialQuantity(itemMaterials)
@@ -242,7 +244,7 @@ class OrdersActivity : BaseActivity() {
 
         // Insert a single order and get its id
         val order = Orders(
-            id = null,
+            id = 0,
             customerName = customerName,
             status = status,
             expectedDelivery = expectedDelivery
@@ -265,16 +267,16 @@ class OrdersActivity : BaseActivity() {
         for (i in 0 until container.childCount) {
             val row = container.getChildAt(i)
             val rowBinding = OrderRowBinding.bind(row)
-            val productId = rowBinding.root.tag as? Int
+            val productId = rowBinding.root.tag as Int
             val quantity = rowBinding.orderProductQuantity.text.toString().toIntOrNull() ?: 0
 
-            val orderItem = OrderItems(id = null, orderId = orderId, productId = productId, quantity = quantity)
+            val orderItem = OrderItems(id = 0, orderId = orderId, productId = productId, quantity = quantity)
             orderItemsRepo.insert(orderItem)
 
-            materialRepo.setQuantity(quantity, productId!!)
+            materialRepo.setQuantity(quantity, productId)
 
             val orderItemId = orderItemsRepo.getLastInsertedId()
-            val productionStatusModel = ProductionStatus(null, orderItemId, 0, 0, 0, 0)
+            val productionStatusModel = ProductionStatus(0, orderItemId, 0, 0, 0, 0)
             productionStatusRepo.insert(productionStatusModel)
         }
 
@@ -354,7 +356,7 @@ class OrdersActivity : BaseActivity() {
         }
     }
 
-    private fun restoreTempOrder() {
+    private suspend fun restoreTempOrder() {
         val prefs = getSharedPreferences("TempOrder", MODE_PRIVATE)
         val json = prefs.getString("items", null) ?: return
 

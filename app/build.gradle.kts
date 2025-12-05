@@ -1,20 +1,12 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.ksp)
 }
 
 android {
     namespace = "com.colarsort.app"
     compileSdk = 36
-
-    signingConfigs {
-        create("release") {
-            storeFile = file("C:/Users/Lars Timajo/OneDrive/Desktop/CollarSort-release-key.jks")
-            storePassword = "123456"
-            keyAlias = "CollarSortkey"
-            keyPassword = "123456"
-        }
-    }
 
     defaultConfig {
         applicationId = "com.colarsort.app"
@@ -22,8 +14,16 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments += mapOf(
+                    "room.schemaLocation" to "$projectDir/schemas",
+                    "room.incremental" to "true"
+                )
+            }
+        }
     }
 
     buildTypes {
@@ -33,7 +33,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
@@ -48,9 +47,12 @@ android {
         viewBinding = true
     }
 }
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+    arg("room.incremental", "true")
+}
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -62,4 +64,7 @@ dependencies {
     implementation(libs.mpandroidchart)
     implementation(libs.gson)
     implementation(libs.coil)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 }

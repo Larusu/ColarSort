@@ -18,20 +18,25 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import coil.load
 import com.colarsort.app.R
 import com.colarsort.app.adapters.MaterialAdapter
 import com.colarsort.app.databinding.ActivityMaterialsBinding
 import com.colarsort.app.databinding.DialogAddMaterialBinding
-import com.colarsort.app.models.Materials
-import com.colarsort.app.repository.MaterialsRepo
-import com.colarsort.app.repository.ProductMaterialsRepo
+import com.colarsort.app.data.entities.Materials
+import com.colarsort.app.data.repository.MaterialsRepo
+import com.colarsort.app.data.repository.ProductMaterialsRepo
+import com.colarsort.app.data.repository.RepositoryProvider
 import com.colarsort.app.utils.UtilityHelper.compressBitmap
 import com.colarsort.app.utils.RecyclerUtils
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 
+@Suppress("DEPRECATION")
 class MaterialsActivity : BaseActivity() {
 
     private lateinit var binding: ActivityMaterialsBinding
@@ -40,14 +45,16 @@ class MaterialsActivity : BaseActivity() {
     private lateinit var adapter: MaterialAdapter
     private val materialList = ArrayList<Materials>()
     private var tempDialogImageView: ImageView? = null
-    private var selectedImageBytes: String? = null
+    private var selectedImage: String? = null
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        materialsRepo = MaterialsRepo(dbHelper)
-        productMaterialsRepo = ProductMaterialsRepo(dbHelper)
+        materialsRepo = RepositoryProvider.materialsRepo
+        productMaterialsRepo = RepositoryProvider.productMaterialsRepo
 
         // Setup view binding
         binding = ActivityMaterialsBinding.inflate(layoutInflater)
@@ -65,7 +72,9 @@ class MaterialsActivity : BaseActivity() {
         binding.recyclerViewMaterials.layoutManager = LinearLayoutManager(this)
         binding.recyclerViewMaterials.adapter = adapter
 
-        RecyclerUtils.initialize(materialList,materialsRepo.getAll(), adapter)
+        lifecycleScope.launch {
+            RecyclerUtils.initialize(materialList, runIO { materialsRepo.getAll() }, adapter)
+        }
 
         // Navigation click listeners
         binding.ivHome.setOnClickListener {
@@ -97,15 +106,16 @@ class MaterialsActivity : BaseActivity() {
         binding.ivSearch.setOnClickListener {
             val strSearch = binding.etSearchField.text.toString().trim()
 
-            val newList = if (strSearch.isEmpty()) {
-                materialsRepo.getAll()
-            } else {
-                materialsRepo.searchMaterialBaseOnName(strSearch)
+            lifecycleScope.launch {
+                val newList = if (strSearch.isEmpty()) {
+                    runIO { materialsRepo.getAll() }
+                } else {
+                    runIO { materialsRepo.searchMaterialBaseOnName(strSearch) }
+                }
+                adapter = MaterialAdapter(ArrayList(newList))
+                binding.recyclerViewMaterials.layoutManager = LinearLayoutManager(this@MaterialsActivity)
+                binding.recyclerViewMaterials.adapter = adapter
             }
-
-            adapter = MaterialAdapter(ArrayList(newList))
-            binding.recyclerViewMaterials.layoutManager = LinearLayoutManager(this)
-            binding.recyclerViewMaterials.adapter = adapter
         }
 
         when(sessionManager.getRole())
@@ -129,7 +139,7 @@ class MaterialsActivity : BaseActivity() {
                 MediaStore.Images.Media.getBitmap(contentResolver, uri)
             }
             tempDialogImageView?.setImageBitmap(bitmap)
-            selectedImageBytes = compressBitmap(this, bitmap)
+            selectedImage = compressBitmap(this, bitmap)
         }
     }
 
@@ -157,47 +167,55 @@ class MaterialsActivity : BaseActivity() {
         }
 
         if (menuItemId == R.id.delete_product) {
-
-            if (productMaterialsRepo.isMaterialUsedInAnyOrder(material.id!!)) {
-                showCustomToast(this, "Cannot delete material. It is used in products with active orders.")
-                return true
-            }
-
-            AlertDialog.Builder(this)
-                .setTitle("Delete Material")
-                .setMessage("Are you sure you want to delete this material?")
-                .setPositiveButton("Yes") { _, _ ->
-
-                    productMaterialsRepo.deleteById(material.id, false)
-
-                    val successful = materialsRepo.deleteColumn(material.id)
-                    if (!successful) {
-                        showCustomToast(this, "Delete failed")
-                        return@setPositiveButton
-                    }
-
-                    val position = materialList.indexOf(material)
-                    if (position != -1) {
-                        RecyclerUtils.deleteAt(materialList, position, adapter)
-                    }
-
-                    showCustomToast(this, "Material deleted successfully")
-                }
-                .setNegativeButton("No") { dialog, _ ->
-                    dialog.dismiss()
-                }
-                .show()
-
-            return true
+            handleDeleteMaterial(material)
         }
+        return false
+    }
 
+    private fun handleDeleteMaterial(material: Materials) : Boolean
+    {
+        lifecycleScope.launch {
+            val isMaterialUsed =
+                runIO { productMaterialsRepo.isMaterialUsedInAnyOrder(materialId = material.id) }
+            if (isMaterialUsed) {
+                showCustomToast(
+                    this@MaterialsActivity,
+                    "Cannot delete material. It is used in products with active orders."
+                )
+                return@launch
+            }
+            else{
+                val confirmed = suspendCancellableCoroutine { cont ->
+                    AlertDialog.Builder(this@MaterialsActivity)
+                        .setTitle("Delete Material")
+                        .setMessage("Are you sure you want to delete this material?")
+                        .setPositiveButton("Yes") { _, _ -> cont.resume(true) { cause, _, _ -> } }
+                        .setNegativeButton("No") { _, _ -> cont.resume(false) { cause, _, _ -> } }
+                        .show()
+                }
+
+                if (!confirmed) return@launch
+
+                runIO { productMaterialsRepo.deleteByProductOrMaterialId(material.id, false) }
+                val success = runIO { materialsRepo.deleteById(material.id) }
+
+                if (!success) {
+                    showCustomToast(this@MaterialsActivity, "Delete failed")
+                    return@launch
+                }
+
+                val position = materialList.indexOf(material)
+                if (position != -1) RecyclerUtils.deleteAt(materialList, position, adapter)
+
+                showCustomToast(this@MaterialsActivity, "Material deleted successfully")
+            }
+        }
         return true
     }
 
-
     // Show add material dialog
     private fun showAddMaterialDialog() {
-        selectedImageBytes = null
+        selectedImage = null
 
         val dialogBinding = DialogAddMaterialBinding.inflate(layoutInflater)
 
@@ -224,9 +242,13 @@ class MaterialsActivity : BaseActivity() {
         // Image picker
         dialogBinding.ivMaterialImage.setOnClickListener {
             tempDialogImageView = dialogBinding.ivMaterialImage
-            val intent = Intent(Intent.ACTION_PICK)
-            intent.type = "image/*"
-            startActivityForResult(intent, 1001)
+
+            onImagePicked = { uri ->
+                tempDialogImageView?.setImageURI(uri)
+                val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
+                selectedImage = compressBitmap(this, bitmap)
+            }
+            openImagePicker()
         }
 
         // Save button
@@ -241,11 +263,13 @@ class MaterialsActivity : BaseActivity() {
                 return@setOnClickListener
             }
 
-            val material = Materials(null, name, quantity, unit, lowStockThreshold, selectedImageBytes)
-            materialsRepo.insert(material)
-            showCustomToast(this, "Material added successfully")
+            val material = Materials(0, name, quantity, unit, lowStockThreshold, selectedImage)
 
-            RecyclerUtils.insertedItems(materialList, materialsRepo.getAll(), adapter)
+            lifecycleScope.launch {
+                runIO { materialsRepo.insert(material) }
+                showCustomToast(this@MaterialsActivity, "Material added successfully")
+                RecyclerUtils.insertedItems(materialList, runIO{ materialsRepo.getAll() }, adapter)
+            }
 
             tempDialogImageView = null
             dialog.dismiss()
@@ -259,7 +283,7 @@ class MaterialsActivity : BaseActivity() {
 
     // Show edit material dialog
     private fun showEditMaterialDialog(material: Materials?) {
-        selectedImageBytes = material?.image
+        selectedImage = material?.image
 
         // Inflate using binding
         val dialogBinding = DialogAddMaterialBinding.inflate(layoutInflater)
@@ -293,8 +317,8 @@ class MaterialsActivity : BaseActivity() {
             val unitPosition = units.indexOf(it.unit).takeIf { pos -> pos >= 0 } ?: 0
             dialogBinding.spMaterialUnit.setSelection(unitPosition)
             dialogBinding.etMaterialQuantity.setText(it.quantity.toString())
-            dialogBinding.etLowStockThreshold.setText(it.stockThreshold.toString())
-            it.image?.let { path ->
+            dialogBinding.etLowStockThreshold.setText(it.lowStockThreshold.toString())
+            it.image.let { path ->
                 dialogBinding.ivMaterialImage.load(path)
             }
         }
@@ -302,9 +326,13 @@ class MaterialsActivity : BaseActivity() {
         // Image picker
         dialogBinding.ivMaterialImage.setOnClickListener {
             tempDialogImageView = dialogBinding.ivMaterialImage
-            val intent = Intent(Intent.ACTION_PICK)
-            intent.type = "image/*"
-            startActivityForResult(intent, 1001)
+
+            onImagePicked = { uri ->
+                tempDialogImageView?.setImageURI(uri)
+                val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
+                selectedImage = compressBitmap(this, bitmap)
+            }
+            openImagePicker()
         }
 
         // Save button
@@ -323,25 +351,25 @@ class MaterialsActivity : BaseActivity() {
 
     private fun handleEditSaveButton(material: Materials?, dialogBinding: DialogAddMaterialBinding, dialog: Dialog)
     {
-        val name: String? = dialogBinding.etMaterialName.text.toString().trim().ifEmpty { null }
-        val quantity: Double? = dialogBinding.etMaterialQuantity.text.toString().toDoubleOrNull()?.takeIf { it != 0.0 }
-        val unit: String? = dialogBinding.spMaterialUnit.selectedItem.toString().takeIf { it.isNotEmpty() }
-        val threshold: Double? = dialogBinding.etLowStockThreshold.text.toString().toDoubleOrNull()?.takeIf { it != 0.0 }
+        val name: String = dialogBinding.etMaterialName.text.toString().trim()
+        val quantity: Double = dialogBinding.etMaterialQuantity.text.toString().toDoubleOrNull() ?: 0.0
+        val unit: String = dialogBinding.spMaterialUnit.selectedItem.toString()
+        val threshold: Double = dialogBinding.etLowStockThreshold.text.toString().toDoubleOrNull() ?: 0.0
 
         when {
-            name == null -> {
+            name.isEmpty() -> {
                 showCustomToast(this, "Invalid name. Please fill in the field.")
                 return
             }
-            quantity == null -> {
+            quantity == 0.0 -> {
                 showCustomToast(this, "Invalid quantity. Please fill in the field.")
                 return
             }
-            unit == null -> {
+            unit.isEmpty() -> {
                 showCustomToast(this, "Invalid unit. Please select a unit.")
                 return
             }
-            threshold == null -> {
+            threshold == 0.0 -> {
                 showCustomToast(this, "Invalid threshold. Please fill in the field.")
                 return
             }
@@ -353,18 +381,21 @@ class MaterialsActivity : BaseActivity() {
             quantity,
             unit,
             threshold,
-            selectedImageBytes ?: material.image
+            selectedImage ?: material.image
         )
-        val success = materialsRepo.update(materialData)
 
-        tempDialogImageView = null
-        dialog.dismiss()
+        lifecycleScope.launch {
+            val success = runIO { materialsRepo.update(materialData) }
 
-        if (success) {
-            RecyclerUtils.updateItem(materialList, materialData, adapter) { it.id }
-            showCustomToast(this, "Material updated successfully")
-        } else {
-            showCustomToast(this, "Update failed")
+            tempDialogImageView = null
+            dialog.dismiss()
+
+            if (success) {
+                RecyclerUtils.updateItem(materialList, materialData, adapter) { it.id }
+                showCustomToast(this@MaterialsActivity, "Material updated successfully")
+            } else {
+                showCustomToast(this@MaterialsActivity, "Update failed")
+            }
         }
     }
 }

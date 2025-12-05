@@ -92,4 +92,19 @@ object RecyclerUtils
         targetList.removeAt(position)
         adapter.notifyItemRemoved(position)
     }
+
+    fun <T> deleteAll(
+        list: MutableList<T>,
+        toRemove: List<T>,
+        adapter: RecyclerView.Adapter<*>
+    ) {
+        toRemove
+            .map { list.indexOf(it) }
+            .filter { it != -1 }
+            .sortedDescending()
+            .forEach { index ->
+                list.removeAt(index)
+                adapter.notifyItemRemoved(index)
+            }
+    }
 }

@@ -8,16 +8,23 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.colarsort.app.R
 import com.colarsort.app.databinding.ItemProductionProductsOrderedBinding
-import com.colarsort.app.models.Orders
-import com.colarsort.app.models.ProductionStatus
-import com.colarsort.app.repository.OrdersRepo
-import com.colarsort.app.repository.ProductionStatusDisplay
-import com.colarsort.app.repository.ProductionStatusRepo
+import com.colarsort.app.data.entities.Orders
+import com.colarsort.app.data.entities.ProductionStatus
+import com.colarsort.app.data.pojo.ProductionStatusDisplay
+import com.colarsort.app.data.repository.OrdersRepo
+import com.colarsort.app.data.repository.ProductionStatusRepo
+import com.colarsort.app.data.repository.RepositoryProvider
+import com.colarsort.app.utils.RecyclerUtils
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ProductionStatusAdapter(
     private val items: ArrayList<ProductionStatusDisplay>,
     private val productionStatusRepo: ProductionStatusRepo,
-    private val ordersRepo: OrdersRepo
+    private val ordersRepo: OrdersRepo = RepositoryProvider.ordersRepo,
+    private val coroutineScope: CoroutineScope
 ) : RecyclerView.Adapter<ProductionStatusAdapter.ViewHolder>() {
     var onDataChanged: (() -> Unit)? = null
     inner class ViewHolder(val binding: ItemProductionProductsOrderedBinding) :
@@ -84,25 +91,30 @@ class ProductionStatusAdapter(
     override fun getItemCount(): Int = items.size
 
     private fun updateStatus(item: ProductionStatusDisplay) {
-        productionStatusRepo.update(
-            ProductionStatus(
-                id = item.productionStatusId,
-                orderItemId = item.orderItemId,
-                cuttingStatus = if (item.cuttingStatus) 1 else 0,
-                stitchingStatus = if (item.stitchingStatus) 1 else 0,
-                embroideryStatus = if (item.embroideryStatus) 1 else 0,
-                finishingStatus = if (item.finishingStatus) 1 else 0
-            )
-        )
+        coroutineScope.launch {
+            runIO {
+                productionStatusRepo.update(
+                    ProductionStatus(
+                        id = item.productionStatusId,
+                        orderItemId = item.orderItemId,
+                        cuttingStatus = if (item.cuttingStatus) 1 else 0,
+                        stitchingStatus = if (item.stitchingStatus) 1 else 0,
+                        embroideryStatus = if (item.embroideryStatus) 1 else 0,
+                        finishingStatus = if (item.finishingStatus) 1 else 0
+                    )
+                )
+                val oldOrder = ordersRepo.getDataById(item.orderId)
 
-        ordersRepo.update(
-            Orders(
-                id = item.orderId,
-                customerName = null,
-                status = "In Progress",
-                expectedDelivery = null
-            )
-        )
+                ordersRepo.update(
+                    Orders(
+                        id = item.orderId,
+                        customerName = oldOrder.customerName,
+                        status = "In Progress",
+                        expectedDelivery = oldOrder.expectedDelivery
+                    )
+                )
+            }
+        }
     }
 
     private fun updateCardColor(item: ProductionStatusDisplay, holder: ViewHolder) {
@@ -131,7 +143,6 @@ class ProductionStatusAdapter(
         // Get all items in the adapter with same orderId
         val sameOrderItems = items.filter { it.orderId == orderId }
 
-        // If none or only one and not complete, skip
         if (sameOrderItems.isEmpty()) return
 
         // Check if all items for that order are fully checked
@@ -142,15 +153,12 @@ class ProductionStatusAdapter(
         }
 
         if (!isCompleted) {
-            // reset completionHandled if any was set before and now not complete
             sameOrderItems.forEach { it.completionHandled = false }
             return
         }
 
-        // Prevent showing dialog multiple times for same items
         if (sameOrderItems.any { it.completionHandled }) return
 
-        // Mark as handled so dialog won't appear repeatedly
         sameOrderItems.forEach { it.completionHandled = true }
 
         val context = holder.binding.root.context
@@ -159,7 +167,6 @@ class ProductionStatusAdapter(
             .setTitle("Order Complete")
             .setMessage("Are you sure this order is already complete?")
             .setPositiveButton("Yes") { _, _ ->
-                // Proceed to delete production statuses and update Order status
                 completeOrder(orderId, sameOrderItems, holder)
             }
             .setNegativeButton("No") { _, _ ->
@@ -183,38 +190,31 @@ class ProductionStatusAdapter(
     }
 
     private fun completeOrder(orderId: Int, itemsSameOrder: List<ProductionStatusDisplay>, holder: ViewHolder) {
-        // 1) Delete production status rows in DB for these items
-        // It's safer to delete by productionStatusId (unique) or by orderItemId if your repo supports it.
         itemsSameOrder.forEach { display ->
-            productionStatusRepo.deleteColumn(display.productionStatusId)
-            // Or, if you prefer to delete by orderItemId:
-            // productionStatusRepo.deleteByOrderItemId(display.orderItemId)
+            coroutineScope.launch {
+                runIO { productionStatusRepo.deleteById(display.productionStatusId) }
+            }
         }
 
-        // 2) Update Orders table status to "Completed"
-        val existingModel = ordersRepo.getRow(orderId)
-        val updatedModel = Orders(
-            id = existingModel?.id,
-            customerName = existingModel?.customerName,
-            status = "Completed",
-            expectedDelivery = existingModel?.expectedDelivery
-        )
+        coroutineScope.launch {
+            val existingModel = runIO { ordersRepo.getDataById(orderId) }
+            val updatedModel = Orders(
+                id = existingModel.id,
+                customerName = existingModel.customerName,
+                status = "Completed",
+                expectedDelivery = existingModel.expectedDelivery
+            )
 
-        ordersRepo.update(updatedModel)
-
-        // 3) Remove the items from adapter list and notify
-        val removed = items.removeAll(itemsSameOrder)
-        if (removed) {
-            notifyDataSetChanged()
-            onDataChanged?.invoke()
-        } else {
-            // fallback: try to remove individually
-            itemsSameOrder.forEach { items.remove(it) }
-            notifyDataSetChanged()
-            onDataChanged?.invoke()
+            runIO { ordersRepo.update(updatedModel) }
         }
 
-        // Optional: show a toast
+        RecyclerUtils.deleteAll(items, itemsSameOrder, this)
+        onDataChanged?.invoke()
+
         Toast.makeText(holder.binding.root.context, "Order marked as Completed.", Toast.LENGTH_SHORT).show()
+    }
+
+    private suspend fun <T> runIO(ioBlock: suspend () -> T): T {
+        return withContext(Dispatchers.IO) { ioBlock() }
     }
 }

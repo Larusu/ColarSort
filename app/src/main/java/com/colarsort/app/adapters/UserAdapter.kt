@@ -6,13 +6,19 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.colarsort.app.databinding.ItemWorkerBinding
-import com.colarsort.app.models.Users
-import com.colarsort.app.repository.UsersRepo
+import com.colarsort.app.data.pojo.PublicUser
+import com.colarsort.app.data.repository.UsersRepo
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
+@Suppress("DEPRECATION")
 class UserAdapter(
-    private val users: ArrayList<Users>,
-    private val usersRepo: UsersRepo
+    private val users: ArrayList<PublicUser>,
+    private val usersRepo: UsersRepo,
+    private val coroutineScope: CoroutineScope
 ) : RecyclerView.Adapter<UserAdapter.ViewHolder>() {
 
     inner class ViewHolder(val binding: ItemWorkerBinding) :
@@ -51,25 +57,31 @@ class UserAdapter(
                         return@setPositiveButton
                     }
 
-                    val success = usersRepo.deleteUser(user.id!!.toInt()) // safe now
+                    coroutineScope.launch {
+                        val success = runIO { usersRepo.deleteUser(user.id) }
 
-
-                    if (success) {
-                        val pos = holder.adapterPosition
-                        if (pos != RecyclerView.NO_POSITION) {
-                            users.removeAt(pos)
-                            notifyItemRemoved(pos)
+                        withContext(Dispatchers.Main) {
+                            if (success) {
+                                val pos = holder.adapterPosition
+                                if (pos != RecyclerView.NO_POSITION) {
+                                    users.removeAt(pos)
+                                    notifyItemRemoved(pos)
+                                }
+                                showCustomToast(context as Activity, "User deleted successfully")
+                            } else {
+                                showCustomToast(context as Activity, "Failed to delete user")
+                            }
+                            dialog.dismiss()
                         }
-                        showCustomToast(context as Activity, "User deleted successfully")
-                        dialog.dismiss()
-                    } else {
-                        showCustomToast(context as Activity, "Failed to delete user")
                     }
-                    dialog.dismiss()
                 }
                 .show()
         }
 
+    }
+
+    private suspend fun <T> runIO(ioBlock: suspend () -> T): T {
+        return withContext(Dispatchers.IO) { ioBlock() }
     }
 
     override fun getItemCount(): Int {

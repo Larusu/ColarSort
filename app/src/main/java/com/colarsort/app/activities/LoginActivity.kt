@@ -6,10 +6,12 @@ import android.text.InputType
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import com.colarsort.app.R
+import com.colarsort.app.data.repository.RepositoryProvider
 import com.colarsort.app.databinding.ActivityLoginBinding
-import com.colarsort.app.repository.UsersRepo
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
+import kotlinx.coroutines.launch
 
 class LoginActivity : BaseActivity() {
 
@@ -23,12 +25,16 @@ class LoginActivity : BaseActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setupUI()
+    }
+
+    private fun setupUI() {
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.contentContainer)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-        // Set up on click listeners
+
         binding.showPasswordIcon.setOnClickListener { togglePasswordVisibility() }
 
         binding.loginButton.setOnClickListener {
@@ -73,17 +79,19 @@ class LoginActivity : BaseActivity() {
             }
         }
 
-        val userRepo = UsersRepo(dbHelper)
-        val (userId, userRole) = userRepo.getIdAndRoleIfExists(username, password)
+        lifecycleScope.launch {
+            val userRepo = RepositoryProvider.usersRepo
+            val (userId, userRole) = userRepo.getIdAndRoleIfExists(username, password)
 
-        if (userId > 0) {
-            sessionManager.saveUser(userId, userRole)
-            showCustomToast(this, "Logged in successfully")
-            val intent = Intent(this, HomeActivity::class.java)
-            startActivity(intent)
-            finish()
-        } else {
-            showCustomToast(this, "User not found")
+            if (userId > 0) {
+                sessionManager.saveUser(userId, userRole)
+                showCustomToast(this@LoginActivity, "Logged in successfully")
+                val intent = Intent(this@LoginActivity, HomeActivity::class.java)
+                startActivity(intent)
+                finish()
+            } else {
+                showCustomToast(this@LoginActivity, "User not found")
+            }
         }
     }
 }

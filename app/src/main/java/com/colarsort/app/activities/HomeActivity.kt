@@ -7,17 +7,20 @@ import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import com.colarsort.app.R
 import com.colarsort.app.databinding.ActivityHomeBinding
-import com.colarsort.app.repository.OrdersRepo
-import com.colarsort.app.repository.ProductionStatusRepo
-import com.colarsort.app.repository.ProductsRepo
+import com.colarsort.app.data.repository.OrdersRepo
+import com.colarsort.app.data.repository.ProductionStatusRepo
+import com.colarsort.app.data.repository.ProductsRepo
+import com.colarsort.app.data.repository.RepositoryProvider
 import com.colarsort.app.utils.UtilityHelper.showCustomToast
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.components.Legend
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
+import kotlinx.coroutines.launch
 
 class HomeActivity : BaseActivity() {
     private lateinit var binding: ActivityHomeBinding
@@ -29,9 +32,9 @@ class HomeActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        orderRepo = OrdersRepo(dbHelper)
-        productsRepo = ProductsRepo(dbHelper)
-        productionStatusRepo = ProductionStatusRepo(dbHelper)
+        orderRepo = RepositoryProvider.ordersRepo
+        productsRepo = RepositoryProvider.productsRepo
+        productionStatusRepo = RepositoryProvider.productionStatusRepo
 
         // Set up view binding
         binding = ActivityHomeBinding.inflate(layoutInflater)
@@ -45,19 +48,21 @@ class HomeActivity : BaseActivity() {
         }
 
         // Get total products and orders
-        val totalProducts = productsRepo.getAll().size
-        val totalOrders = orderRepo.getAll().size
+        lifecycleScope.launch{
+            val totalProducts = runIO { productsRepo.getAll().size }
+            val totalOrders = runIO { orderRepo.getAll().size }
 
-        // Set total products and orders
-        binding.tvTotalProducts.text = totalProducts.toString()
-        binding.tvTotalOrders.text = totalOrders.toString()
+            // Set total products and orders
+            binding.tvTotalProducts.text = totalProducts.toString()
+            binding.tvTotalOrders.text = totalOrders.toString()
 
-        // Set Progress Bar and Pie chart
-        val progressValue = calculateProductionProgress()
-        binding.progressBar.progress = progressValue
-        val progressValueStr = "$progressValue%"
-        binding.tvProgressValue.text = (progressValueStr)
-        showChart()
+            // Set Progress Bar and Pie chart
+            val progressValue = runIO{ calculateProductionProgress() }
+            binding.progressBar.progress = progressValue
+            val progressValueStr = "$progressValue%"
+            binding.tvProgressValue.text = (progressValueStr)
+            showChart()
+        }
 
         // Navigation click listeners
         binding.ivHome.setOnClickListener {
@@ -87,84 +92,83 @@ class HomeActivity : BaseActivity() {
 
     fun showChart()
     {
-        val orders = orderRepo.getAll()
-        var completed = 0
-        var inProgress = 0
-        var pending = 0
-        for(order in orders)
-        {
-            when(order.status)
-            {
-                "Completed" -> completed += 1
-                "In Progress" -> inProgress += 1
-                "Pending" -> pending += 1
+        lifecycleScope.launch{
+            val orders = runIO{ orderRepo.getAll() }
+            var completed = 0
+            var inProgress = 0
+            var pending = 0
+            for (order in orders) {
+                when (order.status) {
+                    "Completed" -> completed += 1
+                    "In Progress" -> inProgress += 1
+                    "Pending" -> pending += 1
+                }
             }
+
+            val chart = findViewById<PieChart>(R.id.donutChart)
+
+            if (completed + inProgress + pending == 0) {
+                chart.visibility = View.GONE
+                binding.chartAvailability.visibility = View.VISIBLE
+                return@launch
+            }
+
+            binding.chartAvailability.visibility = View.GONE
+
+            val entries = mutableListOf<PieEntry>()
+            val colors = mutableListOf<Int>()
+
+            if (completed > 0) {
+                entries.add(PieEntry(completed.toFloat(), "Completed"))
+                colors.add(Color.GREEN)
+            }
+
+            if (inProgress > 0) {
+                entries.add(PieEntry(inProgress.toFloat(), "In Progress"))
+                colors.add(Color.YELLOW)
+            }
+
+            if (pending > 0) {
+                entries.add(PieEntry(pending.toFloat(), "Pending"))
+                colors.add(Color.RED)
+            }
+
+            // Dataset
+            val dataSet = PieDataSet(entries, "")
+            dataSet.setDrawValues(true)
+            dataSet.sliceSpace = 2f
+            dataSet.colors = colors
+
+            // Data
+            val data = PieData(dataSet)
+            data.setValueTextSize(14f)
+            data.setValueTextColor(Color.BLACK)
+
+            chart.data = data
+
+            // Style
+            chart.setUsePercentValues(true)
+            chart.isDrawHoleEnabled = true
+            chart.holeRadius = 60f
+            chart.transparentCircleRadius = 65f
+            chart.centerText = "Orders"
+            chart.description.isEnabled = false
+
+            // Labels on slices
+            chart.setEntryLabelColor(Color.BLACK)
+            chart.setEntryLabelTextSize(12f)
+
+            // Legend
+            val legend = chart.legend
+            chart.legend.isEnabled = true
+            chart.legend.textColor = Color.BLUE
+            legend.horizontalAlignment = Legend.LegendHorizontalAlignment.CENTER
+
+            chart.invalidate()
         }
-
-        val chart = findViewById<PieChart>(R.id.donutChart)
-
-        if(completed + inProgress + pending == 0)
-        {
-            chart.visibility = View.GONE
-            binding.chartAvailability.visibility = View.VISIBLE
-            return
-        }
-
-        binding.chartAvailability.visibility = View.GONE
-
-        val entries = mutableListOf<PieEntry>()
-        val colors = mutableListOf<Int>()
-
-        if (completed > 0) {
-            entries.add(PieEntry(completed.toFloat(), "Completed"))
-            colors.add(Color.GREEN)
-        }
-
-        if (inProgress > 0) {
-            entries.add(PieEntry(inProgress.toFloat(), "In Progress"))
-            colors.add(Color.YELLOW)
-        }
-
-        if (pending > 0) {
-            entries.add(PieEntry(pending.toFloat(), "Pending"))
-            colors.add(Color.RED)
-        }
-
-        // Dataset
-        val dataSet = PieDataSet(entries, "")
-        dataSet.setDrawValues(true)
-        dataSet.sliceSpace = 2f
-        dataSet.colors = colors
-
-        // Data
-        val data = PieData(dataSet)
-        data.setValueTextSize(14f)
-        data.setValueTextColor(Color.BLACK)
-
-        chart.data = data
-
-        // Style
-        chart.setUsePercentValues(true)
-        chart.isDrawHoleEnabled = true
-        chart.holeRadius = 60f
-        chart.transparentCircleRadius = 65f
-        chart.centerText = "Orders"
-        chart.description.isEnabled = false
-
-        // Labels on slices
-        chart.setEntryLabelColor(Color.BLACK)
-        chart.setEntryLabelTextSize(12f)
-
-        // Legend
-        val legend = chart.legend
-        chart.legend.isEnabled = true
-        chart.legend.textColor = Color.BLUE
-        legend.horizontalAlignment = Legend.LegendHorizontalAlignment.CENTER
-
-        chart.invalidate()
     }
 
-    private fun calculateProductionProgress(): Int {
+    private suspend fun calculateProductionProgress(): Int {
         val statuses = productionStatusRepo.getAll()
         if (statuses.isEmpty()) return 0
 
@@ -180,5 +184,4 @@ class HomeActivity : BaseActivity() {
 
         return ((completed * 100) / totalStages)
     }
-
 }
