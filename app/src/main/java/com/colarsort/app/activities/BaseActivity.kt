@@ -133,7 +133,12 @@ open class BaseActivity : AppCompatActivity() {
                                 }
 
                                 lifecycleScope.launch {
-                                    val success = usersRepo.assignWorker(name, password)
+                                    if(usersRepo.isUsernameExists(name.lowercase()))
+                                    {
+                                        showCustomToast(this@BaseActivity, "Username already exists")
+                                        return@launch
+                                    }
+                                    val success = usersRepo.assignWorker(name.lowercase(), password)
                                     if (success) {
                                         showCustomToast(this@BaseActivity, "Worker added successfully")
                                         dialog.dismiss()

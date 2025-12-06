@@ -38,4 +38,7 @@ interface UserDao
         WHERE id = :id;
     """)
     suspend fun delete(id: Int) : Int
+
+    @Query("SELECT EXISTS(SELECT 1 FROM user WHERE username = :username)")
+    suspend fun usernameExists(username : String) : Boolean
 }

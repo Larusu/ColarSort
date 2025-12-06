@@ -59,20 +59,23 @@ class UsersRepo (private val dao: UserDao)
     suspend fun deleteUser(userId: Int): Boolean =
         dao.delete(userId) > 0
 
+    suspend fun isUsernameExists(username: String) : Boolean =
+        dao.usernameExists(username)
+
     suspend fun initializeUsers()
     {
         val admin = Users(
             id = 0,
-            username = "admin",
+            username = "manager",
             role = "Manager",
-            password = hashPassword("admin")
+            password = hashPassword("manager")
         )
 
         val user = Users(
             id = 0,
-            username = "user",
+            username = "worker",
             role = "Worker",
-            password = hashPassword("user")
+            password = hashPassword("worker")
         )
 
         dao.insert(admin)

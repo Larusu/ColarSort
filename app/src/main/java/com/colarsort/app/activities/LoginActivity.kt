@@ -81,7 +81,7 @@ class LoginActivity : BaseActivity() {
 
         lifecycleScope.launch {
             val userRepo = RepositoryProvider.usersRepo
-            val (userId, userRole) = userRepo.getIdAndRoleIfExists(username, password)
+            val (userId, userRole) = userRepo.getIdAndRoleIfExists(username.lowercase(), password)
 
             if (userId > 0) {
                 sessionManager.saveUser(userId, userRole)
