@@ -14,7 +14,7 @@ class UsersRepo (private val dao: UserDao)
      * @param username username of the user performing action
      * @param password password of the user performing action
      */
-    suspend fun getIdAndRoleIfExists(username: String, password: String): UserIdAndRole =
+    suspend fun getIdAndRoleIfExists(username: String, password: String): UserIdAndRole? =
         dao.getIdAndRole(username, hashPassword(password))
 
     /**

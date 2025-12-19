@@ -81,10 +81,10 @@ class LoginActivity : BaseActivity() {
 
         lifecycleScope.launch {
             val userRepo = RepositoryProvider.usersRepo
-            val (userId, userRole) = userRepo.getIdAndRoleIfExists(username.lowercase(), password)
+            val result = userRepo.getIdAndRoleIfExists(username.lowercase(), password)
 
-            if (userId > 0) {
-                sessionManager.saveUser(userId, userRole)
+            if (result != null) {
+                sessionManager.saveUser(result.id, result.role)
                 showCustomToast(this@LoginActivity, "Logged in successfully")
                 val intent = Intent(this@LoginActivity, HomeActivity::class.java)
                 startActivity(intent)
